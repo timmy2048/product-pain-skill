@@ -62,7 +62,8 @@ REQUIRED_FIELDS = (
     "vacuum",
     "competitors",
     "positioning",
-    "compliance",
+    "desk",
+    "suppliers",
     "test",
     "gaps",
     "sources",
@@ -79,16 +80,19 @@ SECTION_KEYS = (
     "vacuum",
     "competitors",
     "positioning",
-    "compliance",
+    "desk",
+    "suppliers",
     "test",
     "gaps",
     "sources",
 )
 
-GATE_NUMBERS = ("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
+GATE_NUMBERS = ("0", "1", "2", "3", "4", "5", "6", "7", "8a", "8b", "9")
+LEGACY_GATE_ALIASES = {"8": "8a"}
 STATUSES_COMMON = {"pass", "fail", "unverified", "not_evaluated"}
 STATUSES_GATE7 = {"complete", "incomplete", "not_evaluated"}
 STATUSES_GATE0 = {"complete", "incomplete", "not_evaluated", "skipped"}
+STATUSES_GATE8B = {"pending", "complete", "fail", "not_evaluated", "not_sent"}
 STATUSES_GATE9 = {"pass", "fail", "unverified", "not_evaluated", "entered", "not_entered"}
 
 NOT_EVALUATED_PREFIX = "Not evaluated — stopped at gate"
@@ -217,12 +221,21 @@ def nested_get(data: dict, *keys: str):
     return None
 
 
+def normalize_gate_key(number: object) -> str:
+    key = str(number).strip().lower()
+    return LEGACY_GATE_ALIASES.get(key, key)
+
+
 def lookup_status(gates: dict, number: str) -> str:
+    number = normalize_gate_key(number)
+    raw = None
     if number in gates:
         raw = gates[number]
+    elif number == "8a" and "8" in gates:
+        raw = gates["8"]
     elif number.isdigit() and int(number) in gates:
         raw = gates[int(number)]
-    else:
+    if raw is None:
         return ""
     if isinstance(raw, dict):
         return str(raw.get("status") or "").strip().lower()
@@ -230,10 +243,13 @@ def lookup_status(gates: dict, number: str) -> str:
 
 
 def allowed_statuses(number: str) -> set[str]:
+    number = normalize_gate_key(number)
     if number == "0":
         return STATUSES_GATE0
     if number == "7":
         return STATUSES_GATE7
+    if number == "8b":
+        return STATUSES_GATE8B
     if number == "9":
         return STATUSES_GATE9
     return STATUSES_COMMON
@@ -244,8 +260,16 @@ def section_is_not_evaluated(value) -> bool:
     return text.startswith("Not evaluated") or text.startswith("未评估")
 
 
+def normalize_facts(data: dict) -> dict:
+    """Accept older 'compliance' files as gate 8a desk notes."""
+    if "desk" not in data and "compliance" in data:
+        data["desk"] = data["compliance"]
+    return data
+
+
 def validate(data: dict) -> list[str]:
     errors: list[str] = []
+    normalize_facts(data)
     missing = [key for key in REQUIRED_FIELDS if key not in data]
     if missing:
         errors.append("missing fields: " + ", ".join(missing))
@@ -287,7 +311,10 @@ def validate(data: dict) -> list[str]:
     gate7 = ""
     if isinstance(gates, dict):
         gate7 = lookup_status(gates, "7")
-        unknown_keys = [str(k) for k in gates if str(k) not in GATE_NUMBERS]
+        unknown_keys = [
+            str(k) for k in gates
+            if normalize_gate_key(k) not in GATE_NUMBERS
+        ]
         if unknown_keys:
             errors.append("unknown gate keys: " + ", ".join(unknown_keys))
         for number in gates:
@@ -311,22 +338,32 @@ def validate(data: dict) -> list[str]:
         statuses = {n: lookup_status(gates, n) for n in GATE_NUMBERS if lookup_status(gates, n)}
         reject_fails = any(
             statuses.get(n) == "fail" for n in ("1", "2", "3", "5", "6")
-        ) or statuses.get("4") == "fail" or statuses.get("8") == "fail"
-        has_unverified = any(
-            statuses.get(n) == "unverified" for n in GATE_NUMBERS
-        ) or statuses.get("7") == "incomplete" or statuses.get("0") == "incomplete"
-        early_pass = all(statuses.get(n) == "pass" for n in ("1", "2", "3", "4", "5", "6", "8"))
+        ) or statuses.get("4") == "fail" or statuses.get("8a") == "fail" or statuses.get("8b") == "fail"
+        must_have_unverified = [
+            n for n in GATE_NUMBERS
+            if n != "8b" and statuses.get(n) == "unverified"
+        ]
+        has_unverified = bool(must_have_unverified) or statuses.get("7") == "incomplete" or statuses.get("0") == "incomplete"
+        early_pass = all(statuses.get(n) == "pass" for n in ("1", "2", "3", "4", "5", "6", "8a"))
         gate7_complete = statuses.get("7") == "complete"
+        gate8b = statuses.get("8b")
         if verdict == "worth a small-scale test":
             if not (early_pass and gate7_complete):
                 errors.append(
-                    "verdict 'worth a small-scale test' requires gates 1–8 to pass "
-                    "and gate 7 to be complete (gate 9 may be not entered)"
+                    "verdict 'worth a small-scale test' requires gates 1–7 to pass "
+                    "(gate 7 complete) and gate 8a to pass; gate 8b may be pending "
+                    "and gate 9 may be not entered"
+                )
+            elif gate8b not in {"pending", "not_sent", "complete"}:
+                errors.append(
+                    "verdict 'worth a small-scale test' requires gate 8b to be "
+                    "pending, not_sent, or complete (attach the RFQ; do not treat "
+                    "a pending quote as unverified)"
                 )
         elif verdict == "reject":
             if not reject_fails:
                 errors.append(
-                    "verdict 'reject' requires at least one fail among gates 1–6 or 8"
+                    "verdict 'reject' requires at least one fail among gates 1–6, 8a, or 8b"
                 )
         elif verdict == "insufficient evidence — stop for now":
             if reject_fails:
@@ -334,22 +371,18 @@ def validate(data: dict) -> list[str]:
                     "a reject-level fail is present; verdict must be 'reject', "
                     "not 'insufficient evidence — stop for now'"
                 )
-            elif not has_unverified and statuses.get("4") != "unverified":
-                # allow insufficient evidence when later required sections are not_evaluated
-                # after an unverified stop, or when gate 8 is unverified, or when no gates
-                # were fully passed through 8
+            elif not has_unverified:
                 if early_pass and gate7_complete:
                     errors.append(
-                        "gates 1–8 all passed, so the verdict cannot be "
-                        "'insufficient evidence — stop for now'"
+                        "gates 1–7 and 8a all passed, so the verdict cannot be "
+                        "'insufficient evidence — stop for now' (gate 8b may stay pending)"
                     )
                 elif not statuses:
                     errors.append(
                         "verdict 'insufficient evidence — stop for now' needs a gates object "
-                        "with at least one unverified or incomplete gate"
+                        "with at least one unverified or incomplete must-have gate"
                     )
 
-        # If an early gate (1-4) failed or is unverified, 8 and 9 should not be passed/entered
         stopper = None
         for n in ("0", "1", "2", "3", "4"):
             st = statuses.get(n)
@@ -362,11 +395,15 @@ def validate(data: dict) -> list[str]:
                 if st in {"fail", "unverified", "incomplete"}:
                     stopper = n
                     break
+        if stopper is None and statuses.get("8a") in {"fail", "unverified"}:
+            stopper = "8a"
         if stopper is not None:
-            blocked = ("8", "9") if stopper in {"5", "6", "7"} else ("5", "6", "7", "8", "9")
-            # 5-7 may still be evaluated if they ran in parallel and stopper is 5-7
             if stopper in {"5", "6", "7"}:
-                blocked = ("8", "9")
+                blocked = ("8a", "8b", "9")
+            elif stopper == "8a":
+                blocked = ("8b", "9")
+            else:
+                blocked = ("5", "6", "7", "8a", "8b", "9")
             for n in blocked:
                 st = statuses.get(n)
                 if st and st not in {"not_evaluated", "not_entered"}:
@@ -408,6 +445,8 @@ def gate_status_block(data: dict, language: str) -> str:
         "skipped": "跳过",
         "entered": "已进入",
         "not_entered": "未进入",
+        "pending": "待询价",
+        "not_sent": "未发出",
     }
     lines = []
     for n in GATE_NUMBERS:
@@ -438,6 +477,7 @@ def default_gate0(data: dict, language: str) -> str:
 
 
 def render(data: dict) -> str:
+    normalize_facts(data)
     language = str(data.get("language") or "en").strip().lower() or "en"
     template_path = TEMPLATE_PATHS.get(language, TEMPLATE_PATHS["en"])
     template = template_path.read_text(encoding="utf-8")
@@ -463,7 +503,8 @@ def render(data: dict) -> str:
         "vacuum": as_block(data.get("vacuum")),
         "competitors": as_block(data.get("competitors")),
         "positioning": as_block(data.get("positioning")),
-        "compliance": as_block(data.get("compliance")),
+        "desk": as_block(data.get("desk")),
+        "suppliers": as_block(data.get("suppliers")),
         "test": as_block(data.get("test")),
         "gate_status": gate_status_block(data, language),
         "gaps": as_block(data.get("gaps")),
@@ -499,6 +540,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: cannot read facts: {exc}", file=sys.stderr)
         return 2
 
+    normalize_facts(data)
     if args.lang:
         data["language"] = args.lang.strip().lower()
     else:

@@ -44,9 +44,13 @@
 
 {{positioning}}
 
-## 8. Compliance, IP, supply chain, unit economics
+## 8a. Desk check (compliance, IP, shelf-price economics)
 
-{{compliance}}
+{{desk}}
+
+## 8b. Supplier quotes
+
+{{suppliers}}
 
 ## 9. Small-scale test
 

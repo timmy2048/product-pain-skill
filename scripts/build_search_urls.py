@@ -79,6 +79,30 @@ CREATIVE_CENTER = (
 USPTO_SEARCH = "https://tmsearch.uspto.gov/"
 USPTO_START = "https://www.uspto.gov/trademarks/search"
 
+# Official start pages only. Do not invent unofficial query endpoints.
+TM_OFFICES = {
+    "us": [
+        ("USPTO Trademark Search", USPTO_SEARCH),
+        ("USPTO trademarks start page", USPTO_START),
+    ],
+    "uk": [
+        ("UK IPO trade mark search", "https://trademarks.ipo.gov.uk/ipo-tmtext"),
+        ("GOV.UK trade mark search landing page", "https://www.gov.uk/search-for-trademark"),
+    ],
+    "au": [
+        ("IP Australia Trade Mark Search", "https://search.ipaustralia.gov.au/trademarks/search"),
+    ],
+    "ca": [
+        ("CIPO Canadian Trademarks Database", "https://ised-isde.canada.ca/cipo/trademark-search/srch/"),
+    ],
+    "nz": [
+        ("IPONZ trade mark search", "https://www.iponz.govt.nz/about-ip/trade-marks/search/"),
+    ],
+    "ie": [
+        ("EUIPO eSearch (Ireland / EU marks)", "https://euipo.europa.eu/eSearch/"),
+    ],
+}
+
 
 def encode_query(term: str, extra_safe: str = "") -> str:
     return quote_plus(term.strip(), safe=extra_safe)
@@ -139,8 +163,11 @@ def meta_ad_library_url(term: str, market: str) -> str:
     )
 
 
-def patents_url(term: str) -> str:
-    return f"https://patents.google.com/?q={encode_query(term)}"
+def patents_url(term: str, exact: bool = False) -> str:
+    q = term.strip()
+    if exact and " " in q:
+        q = f'"{q}"'
+    return f"https://patents.google.com/?q={encode_query(q)}"
 
 
 def similarweb_url(domain: str) -> str:
@@ -175,6 +202,31 @@ def _trends_explore(market: str) -> str:
     return url
 
 
+
+def trademark_section(markets: list[str], names: list[str]) -> list[str]:
+    lines = [
+        "## Official trademark search (gate 8a)",
+        "",
+        "Open these official tools in a browser and type the names below. This script does not query them.",
+        "",
+    ]
+    if names:
+        lines.append("Names to search (exact and near marks, relevant classes):")
+        for name in names:
+            lines.append(f"- {name}")
+        lines.append("")
+    seen: set[str] = set()
+    office_markets = [m for m in markets if m in TM_OFFICES] or ["us", "uk", "au"]
+    for market in office_markets:
+        for label, url in TM_OFFICES[market]:
+            if url in seen:
+                continue
+            seen.add(url)
+            lines.append(f"- {label} ({market.upper()}): {url}")
+    lines.append("")
+    return lines
+
+
 def render_markdown(
     keywords: list[str],
     markets: list[str],
@@ -183,6 +235,7 @@ def render_markdown(
     pain_patterns: bool = False,
     compare: list[str] | None = None,
     discover: bool = False,
+    names: list[str] | None = None,
 ) -> str:
     lines = ["# Search URLs", ""]
     lines.append(
@@ -233,8 +286,8 @@ def render_markdown(
         lines.append(f"- TikTok: {tiktok_url(term)}")
         lines.append(f"- YouTube: {youtube_url(term)}")
         lines.append(f"- Google Patents: {patents_url(term)}")
-        lines.append(f"- USPTO Trademark Search: {USPTO_SEARCH}")
-        lines.append(f"- USPTO trademarks start page: {USPTO_START}")
+        if " " in term.strip():
+            lines.append(f"- Google Patents (quoted phrase): {patents_url(term, exact=True)}")
         for market in shop_markets:
             label = market.upper()
             note = f" — {AMAZON_NOTE[market]}" if market in AMAZON_NOTE else ""
@@ -262,6 +315,10 @@ def render_markdown(
                 lines.append(f"- `{phrase}` Reddit: {patterned_urls['reddit_search']}")
                 lines.append(f"- `{phrase}` Google: {patterned_urls['google_site_reddit']}")
             lines.append("")
+
+    names = [n.strip() for n in (names or []) if n.strip()]
+    if names or any(m in TM_OFFICES for m in markets):
+        lines.extend(trademark_section(markets, names))
 
     if domains:
         lines.append("## Similarweb (free snapshot)")
@@ -310,6 +367,12 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Also (or only) print gate-0 discovery links: Movers & Shakers, Creative Center, Trends.",
     )
+    parser.add_argument(
+        "--names",
+        nargs="+",
+        default=[],
+        help="Brand-name candidates for official trademark-office start pages (gate 8a). The script does not search them.",
+    )
     args = parser.parse_args(argv)
     try:
         markets = parse_markets(args.markets)
@@ -317,8 +380,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     keywords = [k.strip() for k in args.keywords if k.strip()]
-    if not keywords and not args.discover:
-        print("error: provide at least one keyword, or pass --discover", file=sys.stderr)
+    names = [n.strip() for n in args.names if n.strip()]
+    if not keywords and not args.discover and not names:
+        print("error: provide at least one keyword, or pass --discover or --names", file=sys.stderr)
         return 2
     sys.stdout.write(
         render_markdown(
@@ -328,6 +392,7 @@ def main(argv: list[str] | None = None) -> int:
             pain_patterns=args.pain_patterns,
             compare=args.compare,
             discover=args.discover,
+            names=names,
         )
     )
     return 0

@@ -16,10 +16,20 @@ Paid keyword, rank, or review suites may be cited if the user already has access
 
 ## Trademarks and patents
 
-- **USPTO trademark search** (public): there is no official API that searches by brand name. The official name search is [Trademark Search](https://tmsearch.uspto.gov/), which is a browser app; a start page also lives at `https://www.uspto.gov/trademarks/search`. A curl or fetch of that page will often return an empty shell. Open it in a browser. The TSDR API looks up an already-known serial or registration number; it does not replace a name search. Official bulk data is available through the USPTO Open Data Portal, but it is not required for a v1 name check. Do not call undocumented internal search endpoints. A third-party site can be a lead, not a clearance.
+Official name search is a browser step for gate 8a. Automated fetches of these pages often return an empty shell. Search each name candidate (exact and near marks, relevant classes) on the office that matches each target market in the run. A third-party site can be a lead, not a clearance. Do not call undocumented internal search endpoints.
+
+- **United States — USPTO**: [Trademark Search](https://tmsearch.uspto.gov/). A start page also lives at `https://www.uspto.gov/trademarks/search`. There is no official API that searches by brand name. The TSDR API looks up an already-known serial or registration number; it does not replace a name search. Official bulk data is available through the USPTO Open Data Portal, but it is not required for a v1 name check.
+- **United Kingdom — UK IPO**: [Search for a trade mark](https://trademarks.ipo.gov.uk/ipo-tmtext) (word search). The GOV.UK landing page is `https://www.gov.uk/search-for-trademark`.
+- **Australia — IP Australia**: [Australian Trade Mark Search](https://search.ipaustralia.gov.au/trademarks/search).
+- **Canada — CIPO**, when Canada is in the run: [Canadian Trademarks Database](https://ised-isde.canada.ca/cipo/trademark-search/srch/).
+- **New Zealand — IPONZ**, when selected: [Search for a trade mark](https://www.iponz.govt.nz/about-ip/trade-marks/search/).
+- **Ireland**, when selected: [EUIPO eSearch](https://euipo.europa.eu/eSearch/) for EU marks, plus the national office if you can open it.
 - **Google Patents**: `https://patents.google.com/?q={query}`. Look for utility or design patents that would block the proposed form.
-- Gate 8 is not passed until the official (or equivalent national) search you intended is actually completed. "No hits on an unofficial site" is not a clearance. Candidate brand names stay candidates until then.
+
+Gate 8a is not passed until the official searches you intended are actually completed in a browser. "No hits on an unofficial site" is not a clearance. Candidate brand names stay candidates. Completing the search is not a legal opinion.
+
+Supplier pages used later in gate 8b (for example a public factory listing) are often blocked by captchas. Record the gap, use the RFQ in `templates/rfq.md`, and do not invent MOQ or ex-factory prices. Do not contact a supplier unless the user has agreed.
 
 ## URL helper
 
-`python scripts/build_search_urls.py --keywords "example pain" --markets us,uk,au` prints these destinations as Markdown. Add `--discover` for gate-0 links, `--pain-patterns` for Reddit pain queries, and `--compare` for a Trends comparison URL. It does not fetch or scrape the pages.
+`python scripts/build_search_urls.py --keywords "example pain" --markets us,uk,au` prints these destinations as Markdown. Add `--discover` for gate-0 links, `--pain-patterns` for Reddit pain queries, `--compare` for a Trends comparison URL, and `--names` for official trademark-office start pages to open in a browser. It does not fetch or scrape the pages.
