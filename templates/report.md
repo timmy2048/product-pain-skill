@@ -40,11 +40,11 @@
 
 {{competitors}}
 
-## 7. Positioning and names
+## 7. Positioning and claim boundaries
 
 {{positioning}}
 
-## 8a. Desk check (compliance, IP, shelf-price economics)
+## 8. Desk check (regulatory path, patents, competitor-price benchmark)
 
 {{desk}}
 
@@ -55,6 +55,10 @@
 ## 9. Small-scale test
 
 {{test}}
+
+## After you pick the product (brand-launch checklist)
+
+{{brand_launch}}
 
 ## Gate status
 

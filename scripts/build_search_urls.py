@@ -205,9 +205,9 @@ def _trends_explore(market: str) -> str:
 
 def trademark_section(markets: list[str], names: list[str]) -> list[str]:
     lines = [
-        "## Official trademark search (gate 8a)",
+        "## Official trademark search (after you pick the product)",
         "",
-        "Open these official tools in a browser and type the names below. This script does not query them.",
+        "Open these official tools in a browser and type the names below. This script does not query them. Trademark search is a post-selection brand-launch step and does not affect the selection verdict.",
         "",
     ]
     if names:
@@ -317,7 +317,7 @@ def render_markdown(
             lines.append("")
 
     names = [n.strip() for n in (names or []) if n.strip()]
-    if names or any(m in TM_OFFICES for m in markets):
+    if names:
         lines.extend(trademark_section(markets, names))
 
     if domains:
@@ -371,7 +371,7 @@ def main(argv: list[str] | None = None) -> int:
         "--names",
         nargs="+",
         default=[],
-        help="Brand-name candidates for official trademark-office start pages (gate 8a). The script does not search them.",
+        help="Brand-name candidates for official trademark-office start pages (post-selection / brand-launch checklist; does not affect the selection verdict). Emitted only when this flag is passed. The script does not search them.",
     )
     args = parser.parse_args(argv)
     try:

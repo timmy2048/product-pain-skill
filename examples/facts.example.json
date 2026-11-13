@@ -9,7 +9,7 @@
   ],
   "inputs": "Example only. Replace with a real run. Category was already provided, so gate 0 was skipped.",
   "verdict": "worth a small-scale test",
-  "rationale": "This is a sample file so you can try scripts/render_report.py. Gates 1–7 and 8a are marked passed only as a fixture; gate 8b is pending, so the allowed verdict is worth a small-scale test. It is not a real product decision.",
+  "rationale": "This is a sample file so you can try scripts/render_report.py. Gates 1–7 and 8 are marked passed only as a fixture; gate 8b is pending, so the allowed verdict is worth a small-scale test. Trademark search is left unstarted on purpose and does not affect that verdict. It is not a real product decision.",
   "aesthetic_reference": "A cross-category brand this audience already likes, not a same-category incumbent.",
   "claims": "List claims that must not be used. This example is not a real clearance.",
   "gate0": "Skipped — a category, audience, or pain was already given.",
@@ -50,9 +50,9 @@
     "aesthetic_reference": "A cross-category brand this audience already likes, not a same-category incumbent.",
     "why_it_fits": "Why that reference already resonates with this audience.",
     "name_candidates": [
-      "Example One",
-      "Example Two",
-      "Example Three"
+      "Example One (uncleared idea)",
+      "Example Two (uncleared idea)",
+      "Example Three (uncleared idea)"
     ],
     "claim_boundaries": "List claims that must not be used. This example is not a real clearance.",
     "status": "complete"
@@ -71,19 +71,19 @@
     "5": "pass",
     "6": "pass",
     "7": "complete",
-    "8a": "pass",
+    "8": "pass",
     "8b": "pending",
     "9": "not_entered"
   },
   "desk": {
-    "trademark_search": "Open the official USPTO, UK IPO, and IP Australia tools in a browser and record hits. This example did not actually search.",
-    "patents": "Open Google Patents for the proposed form.",
     "regulatory_path": "State the path for the target markets. Do not invent a clearance.",
-    "shelf_price_sketch": "Use dated retail prices you opened; do not invent ex-factory cost.",
+    "patents": "Quick look on Google Patents for the core feature or proposed form. This example did not actually search.",
+    "competitor_price_benchmark": "Use dated competitor shelf prices you opened. Back-calculate a target landed and ex-factory ceiling with stated assumption percentages for marketplace fees, shipping, returns, ads, and margin. Label every percentage and ceiling as an assumption, never as a quote. This example did not calculate a real range.",
     "status": "pass"
   },
   "suppliers": {
     "status": "pending",
-    "note": "RFQ drafted from templates/rfq.md. Not sent, because the user has not agreed to outreach."
-  }
+    "note": "RFQ drafted from templates/rfq.md using the competitor-price benchmark as the sample. Not sent, because the user has not agreed to outreach."
+  },
+  "brand_launch": "Optional and not started in this example. Official trademark and name clearance happen after a product is picked and do not affect the selection verdict."
 }

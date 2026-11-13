@@ -5,7 +5,7 @@ description: Use when screening a D2C product from a real category pain point, p
 
 # Product pain skill
 
-Collect inputs first, then run the gates in order. Stop when a gate fails. After a stop, still write the full report: sections for gates that were not run must say **Not evaluated — stopped at gate N**. Do not jump to branding, tooling, or paid tests early. The conclusion must be exactly one of: **worth a small-scale test**, **reject**, or **insufficient evidence — stop for now**. Mark unverified facts as uncertain. Never invent volumes, factory prices, MOQ, or margins, and never promise sales results.
+Collect inputs first, then run the gates in order. Stop when a gate fails. After a stop, still write the full report: sections for gates that were not run must say **Not evaluated — stopped at gate N**. Do not jump to branding, tooling, or paid tests early. The conclusion must be exactly one of: **worth a small-scale test**, **reject**, or **insufficient evidence — stop for now**. Mark unverified facts as uncertain. Never invent volumes, factory prices, MOQ, or margins, and never promise sales results. You may back-calculate a target landed or ex-factory ceiling from dated competitor shelf prices, but every percentage you use must be labelled an **assumption**, never a quote or a verified factory cost.
 
 This skill is model-agnostic. It works with any agent that can read this file, open public web pages, and write the report. Do not bind evidence collection to one model vendor.
 
@@ -44,11 +44,13 @@ If a key input is missing, use a reasonable default from context and state it in
 - Ecommerce evidence is required. Check the channels the target market actually buys from (Amazon is the default for US/UK/AU; add other retailers or official brand sites when relevant). Trend charts and videos alone are not enough to call a pain real.
 - YouTube and similar routine content show how people use a product and what they complain about. Absolute search volume and ad-auction competition confirm demand size. Google Trends is optional direction, not a required gate.
 - Collect transcripts, volumes, prices, and reviews from pages or dedicated tools. The model only clusters, judges, and writes the conclusion. It does not invent evidence.
-- After the form and the logistics/education screen both pass, gates 5–7 may run in parallel. If one of them fails, is unverified, or (for gate 7) is incomplete, finish any of 5–7 already in progress, then stop before gate 8a. Gate 8a stays after those. Gate 8b is a supplier-quote follow-up and is not required to conclude **worth a small-scale test**. Gate 9 is always last and must not run if gate 8a or any earlier gate failed or was unverified on a must-have fact. A pending 8b does not block gate 9 or that verdict.
+- After the form and the logistics/education screen both pass, gates 5–7 may run in parallel. If one of them fails, is unverified, or (for gate 7) is incomplete, finish any of 5–7 already in progress, then stop before gate 8. Gate 8 stays after those. Gate 8b is a supplier-quote follow-up and is not required to conclude **worth a small-scale test**. Gate 9 is always last and must not run if gate 8 or any earlier gate failed or was unverified on a must-have fact. A pending 8b does not block gate 9 or that verdict.
 - Prefer public pages, official APIs, or a constructed search URL that a person or browser then opens. Do not use scrapers, credentials, or plugins that violate a site's terms of service. If a page is blocked or requires login, record the gap and treat the missing fact as unverified.
-- Official APIs for Reddit and the Meta Ad Library are optional accelerators when the user already has approved credentials. They are not required to finish a run, and you should not wait on API review before starting the gates. If credentials are missing, use public pages and record the gap. TikTok's Research API is limited to approved academic or non-profit researchers and is not a commercial selection tool. Amazon has no official API for 2–3-star review text; use the public "Customers say" summary and, when the user can sign in, the star-filtered reviews. Trademark name search has no official public API at USPTO, UK IPO, or IP Australia; use each official search page in a browser. Do not call undocumented internal search endpoints.
+- Official APIs for Reddit and the Meta Ad Library are optional accelerators when the user already has approved credentials. They are not required to finish a run, and you should not wait on API review before starting the gates. If credentials are missing, use public pages and record the gap. TikTok's Research API is limited to approved academic or non-profit researchers and is not a commercial selection tool. Amazon has no official API for 2–3-star review text; use the public "Customers say" summary and, when the user can sign in, the star-filtered reviews. Official trademark name search has no public API at USPTO, UK IPO, or IP Australia; use each official search page in a browser after a product is picked, if a name will actually be used. Do not call undocumented internal search endpoints. Trademark search is not part of the selection verdict.
 - Default to free, publicly reachable tools. Paid rank, review, or keyword suites are optional upgrades, never required dependencies for a complete run.
-- Shipping weight, restricted goods, return or hygiene rules, and market-education cost can kill an otherwise valid pain-plus-demand idea. Screen them early, before deep brand and trademark work.
+- Shipping weight, restricted goods, return or hygiene rules, and market-education cost can kill an otherwise valid pain-plus-demand idea. Screen them early, before deep brand work.
+- During selection, judge price feasibility with a competitor-price teardown: dated competitor shelf prices, then a back-calculated target landed cost and allowable ex-factory range. State every assumption percentage (marketplace fees, shipping, returns, ads, margin). Never present those percentages, or the resulting ceilings, as quotes or as verified factory costs.
+- Official trademark and name clearance happen after you pick the product. They are optional in the selection report and must not affect the verdict. Gate 7 may list brief, uncleared name ideas; it must not run a trademark search.
 - Third-party trend blogs, shop-sales snapshots, and traffic estimates (for example Nolyn, Trenz, or Similarweb estimates) are leads only. They must not be used as evidence that gate 1 or gate 2 has passed. Look the same claim up on a required channel before it counts.
 - Every visible price used as evidence must include the date it was seen and the marketplace or page. Do not treat an editorial or press price as a live transaction price.
 
@@ -60,10 +62,10 @@ Every evaluated gate gets exactly one status:
 - **fail** — the fail rule is met.
 - **unverified** — a must-have fact could not be checked (blocked page, login wall, unpaid data, or missing source).
 - Gate 7 uses **complete** or **incomplete** instead of pass or fail. Incomplete is treated like unverified when choosing the verdict.
-- Gate 8b uses **pending**, **complete**, or **fail** (or **not evaluated** if 8a did not pass). **pending** is not unverified and does not block a test verdict.
+- Gate 8b uses **pending**, **complete**, or **fail** (or **not evaluated** if gate 8 did not pass). **pending** is not unverified and does not block a test verdict.
 - Gates not reached are **not evaluated**.
 
-Must-have facts are the ones named in each gate's Pass or Complete rule. Optional extras (for example Google Trends in gate 2) may stay unverified without failing the gate if the must-have evidence is present.
+Must-have facts are the ones named in each gate's Pass or Complete rule. Optional extras (for example Google Trends in gate 2, or brand-name candidates in gate 7) may stay unverified or omitted without failing the gate if the must-have evidence is present.
 
 Verdict mapping:
 
@@ -72,13 +74,13 @@ Verdict mapping:
 | Any of gates 1–3, 5, or 6 **fail** | **reject** |
 | Gate 4 **fail** because shipping, restrictions, returns, or education cost is clearly unworkable at a realistic price | **reject** |
 | Gate 4 risk looks material but the cost cannot be verified | **insufficient evidence — stop for now** |
-| Any evaluated must-have gate is **unverified**, or gate 7 is **incomplete** (a **pending** 8b does not count) | **insufficient evidence — stop for now** |
-| Gates 1–7 pass or are complete, and gate 8a **pass** | **worth a small-scale test**. Gate 8b may still be **pending**. Gate 9 need not have been entered. |
-| Gate 8a **fail** | **reject** when evidence you opened already shows a clearly closed regulatory path, or a desk sketch from visible shelf prices that cannot work at a realistic retail price. |
-| Gate 8a **unverified** | **insufficient evidence — stop for now** (required official searches or a shelf-price sketch could not be completed). Do not invent MOQ or ex-factory cost to force a pass. |
+| Any evaluated must-have gate is **unverified**, or gate 7 is **incomplete** (a **pending** 8b does not count; a missing trademark search does not count) | **insufficient evidence — stop for now** |
+| Gates 1–7 pass or are complete, and gate 8 **pass** | **worth a small-scale test**. Gate 8b may still be **pending**. Gate 9 need not have been entered. Official trademark search is not required for this verdict. |
+| Gate 8 **fail** | **reject** when evidence you opened already shows a clearly closed regulatory path, a patent that would block the proposed form, or a competitor-price back-calculation that leaves no room under the stated assumptions. |
+| Gate 8 **unverified** | **insufficient evidence — stop for now** (the regulatory path, a patent quick look on the core feature, or a competitor-price sketch grounded in visible dated shelf prices could not be completed). Do not invent MOQ or ex-factory cost to force a pass. Do not fail or un-verify this gate for lack of a trademark search. |
 | Gate 8b later **fail** (quotes received, and verified costs cannot work) | **reject**, even if an earlier draft had said the idea was worth a test. |
 
-Do not require gate 8b to be complete, or gate 9 to have been entered, in order to conclude **worth a small-scale test**. Gate 8b stays **pending** until quotes are in hand. Gate 9 is the test plan that follows the test verdict. If you stop early, still output every report section; unreached sections must be exactly: **Not evaluated — stopped at gate N**.
+Do not require gate 8b to be complete, or gate 9 to have been entered, in order to conclude **worth a small-scale test**. Gate 8b stays **pending** until quotes are in hand. Gate 9 is the test plan that follows the test verdict. If you stop early, still output every report section; unreached sections must be exactly: **Not evaluated — stopped at gate N**. Older facts files may still number the desk check as **8a**; treat **8a** as the same gate as **8**.
 
 ## Tooling (free first)
 
@@ -88,10 +90,11 @@ Use these defaults in v1. Paid alternatives may be added in the report as option
 | --- | --- | --- |
 | Pain in the wild | Reddit, Amazon, TikTok, YouTube public search | Follow `references/` playbooks. Build URLs with `scripts/build_search_urls.py`. |
 | Demand / search | Google Search plus a free volume overlay when available (for example Keyword Surfer); Google Trends for direction | Label third-party or extension figures as estimates. Never invent official Keyword Planner volumes. |
-| Reviews and competitors | Amazon public product pages, especially "Customers say" and 2–3 star reviews when a signed-in browser can open them | See `references/amazon.md`. Brand sites are a supplement, not a substitute. |
+| Reviews and competitors | Amazon public product pages, especially "Customers say" and 2–3 star reviews when a signed-in browser can open them | See `references/amazon.md`. Brand sites are a supplement, not a substitute. Capture dated shelf prices here; they feed the gate 8 cost benchmark. |
 | Ad spend signals | Meta Ad Library (public page, or the official API when the user has a token) | Longevity and ad count are spend/expansion clues, not proof of profit. |
 | Site traffic | Similarweb free snapshot | If the free view is empty or paywalled, mark traffic as unknown. Treat figures as estimates and as leads, not as gate 1–2 evidence. |
-| Trademarks and patents | Official trademark search in a browser (USPTO, UK IPO, IP Australia; add CIPO or other national offices when those markets are in the run), Google Patents | Incomplete official search means gate 8a is not passed. |
+| Patents (gate 8) | Google Patents | Quick look for utility or design patents that would block the proposed form or its core feature. |
+| Trademarks (after you pick the product) | Official trademark search in a browser (USPTO, UK IPO, IP Australia; add CIPO, IPONZ, or EUIPO when those markets are in the run) | Optional brand-launch checklist only. Not a selection gate, and not part of the verdict. `scripts/build_search_urls.py --names` prints the official start pages. |
 
 Channel playbooks: `references/reddit.md`, `references/amazon.md`, `references/tiktok.md`, `references/youtube.md`. Tool notes: `references/tools.md`.
 
@@ -138,7 +141,7 @@ Fail: the form does not address the pain, or it is only a reskin of products tha
 
 ### 4. Screen logistics and market-education cost
 
-Do this before brand, trademark, and deep competitive work.
+Do this before brand work and deep competitive work.
 
 Fail or stop if the idea is clearly expensive to ship or to explain relative to a realistic retail price: heavy or bulky goods, wet wipes and other liquids, batteries or hazardous materials, or a product that requires teaching a new habit before anyone will buy it. A trending, unbranded pain is not enough if fulfillment or education would dominate cost.
 
@@ -156,57 +159,82 @@ Fail: a dominant brand has locked the category and already solved the pain. The 
 
 ### 6. Contrast competitors and name the difference
 
-Keep using ecommerce reviews, returns, Q&A, and reputable roundups.
+Keep using ecommerce reviews, returns, Q&A, and reputable roundups. Record dated competitor shelf prices and marketplaces; gate 8 will use them for the cost benchmark.
 
 Pass: there is a verifiable difference in form, experience, aesthetic, price band, or use occasion — not a slogan. The difference must be checkable on competitor pages (construction, sizing system, materials, or occasion), not only claimed in copy.
 
 Fail: the only difference is a claim or a slogan, or every claimed difference is already on a competitor page.
 
-### 7. Positioning, name candidates, and claim boundaries
+### 7. Positioning and claim boundaries
 
-Write the target user, aesthetic references, two or three brand-name candidates, and claims that must not be used (especially medical or efficacy claims). This gate does not clear a trademark; that belongs in gate 8a. Treat name candidates as unregistered ideas only.
+Write the target user, aesthetic references, and claims that must not be used (especially medical or efficacy claims). Brand-name candidates are optional and should stay brief if included. If you list names, label them **uncleared ideas**. Do not run an official trademark search at this gate; name clearance belongs in the post-selection checklist, after a product is picked.
 
 For aesthetic references, do not copy the look of established competitors in the same category. Borrow from a brand the target audience already loves in a *different* category — for example a pet product taking cues from Aesop or Muji, or a sports accessory taking cues from Rhode or Glossier. Name the reference brand and why this audience already likes it. The goal is a look that stands apart on the same shelf, not a reskin of a category incumbent.
 
-Complete: the write-up includes a target user, a cross-category aesthetic reference with a reason, two or three name candidates, and claim boundaries.
+Complete: the write-up includes a target user, a cross-category aesthetic reference with a reason, and claim boundaries. Names are not required for a complete status.
 
-Incomplete: any of those is missing.
+Incomplete: the target user, the aesthetic reference and reason, or the claim boundaries are missing. Missing names do not make this gate incomplete.
 
-### 8a. Desk check: compliance, IP, and shelf-price economics
+### 8. Desk check: regulatory path, patents, and competitor-price cost benchmark
 
-Do this after gates 5–7. Use a browser for official trademark name search. Do not call undocumented internal search endpoints, and do not treat a third-party trademark site as a clearance.
+Do this after gates 5–7. In the report and facts file this gate is numbered **8**. Older files may still use **8a**; treat that as the same gate. Official trademark search is not part of this gate and must not affect its status or the verdict.
 
-Search each name candidate (exact and near marks, in relevant classes) on the official office for every target market in the run:
+State the regulatory path for the target markets, especially efficacy and medical-device language.
 
-- United States: [USPTO Trademark Search](https://tmsearch.uspto.gov/)
-- United Kingdom: [UK IPO trade mark search](https://trademarks.ipo.gov.uk/ipo-tmtext)
-- Australia: [IP Australia Trade Mark Search](https://search.ipaustralia.gov.au/trademarks/search)
-- Canada, when that market is in the run: [CIPO Canadian Trademarks Database](https://ised-isde.canada.ca/cipo/trademark-search/srch/)
-- Ireland or New Zealand, when selected: the official office listed in `references/tools.md`
+Search Google Patents for utility or design patents that would block the proposed form or its core feature. A blocking patent can kill the product form, so keep this quick look in the selection desk check.
 
-Also search Google Patents for utility or design patents that would block the proposed form. State the regulatory path for the target markets, especially efficacy and medical-device language.
+Then build a competitor-price cost benchmark (a price-based teardown):
 
-Build a rough unit-economics sketch only from visible, dated retail prices, and from any public cost figure you actually opened. Do not invent MOQ, ex-factory price, or margin. You may use a clearly labelled assumption (for example a target gross-margin band against the shelf price) as long as it is not presented as a verified factory cost.
+1. Start from dated competitor shelf prices you actually opened (price, marketplace or page, and date seen).
+2. Back-calculate a target landed cost and an allowable ex-factory cost range.
+3. State every assumption percentage you use — typically marketplace fees, shipping or fulfillment, returns, ads, and target margin. If you also assume inbound freight or duties, say so.
+4. Show the arithmetic so a reader can see how the shelf price became the cost ceiling.
+5. Label every percentage and every resulting ceiling as an **assumption**, never as a quote or a verified factory cost.
 
-Pass: the official trademark searches you intended for the target markets were actually completed in a browser, conflicts are recorded, the regulatory path is stated, and a rough sketch from visible shelf prices still looks plausible. Candidate names remain uncleared ideas. This is not a legal opinion.
+You may use clearly labelled starting percentages when you do not yet have better ones, as long as you say they are assumptions and you show the numbers you used. Do not invent MOQ, an ex-factory quote, or a margin presented as fact.
 
-Fail: evidence you opened already shows a clearly closed regulatory path, or the desk sketch from visible prices is clearly unworkable at a realistic retail price.
+Illustrative shape only (replace every figure with the assumptions you are actually using): if a competitor is $40 on Amazon US on a stated date, and you assume marketplace fees 15%, fulfillment 10%, returns 5%, ads 20%, and a 25% margin target, then 75% of retail is spoken for and $10 is the implied landed-cost ceiling before inbound freight and duties. Those percentages and the $10 ceiling are assumptions, not quotes.
 
-If a required official search cannot be completed, or the desk sketch cannot be grounded in visible prices, mark 8a **unverified**.
+Pass: the regulatory path is stated, a patent quick look on the core feature was actually done, and a back-calculation from visible dated shelf prices still leaves room under the stated assumptions.
+
+Fail: evidence you opened already shows a clearly closed regulatory path, a patent that would block the proposed form, or a competitor-price back-calculation that leaves no room under the stated assumptions.
+
+If the regulatory path, the patent quick look, or a sketch grounded in visible dated shelf prices cannot be completed, mark gate 8 **unverified**. Do not mark this gate unverified or failed because a trademark search was not done.
 
 ### 8b. Supplier quotes
 
-This step is not required to conclude **worth a small-scale test**. After 8a passes, attach a filled request-for-quote from `templates/rfq.md` and set this gate to **pending**.
+This step is not required to conclude **worth a small-scale test**. After gate 8 passes, attach a filled request-for-quote from `templates/rfq.md` (or `templates/rfq.zh.md` when the report is in Chinese) and set this gate to **pending**.
 
-Do not contact a factory or supplier unless the user has explicitly agreed to that outreach. If they have not, leave the RFQ in the report and do not send it. Until quotes are in hand, the report must say **pending 8b**.
+Build the RFQ around the competitor-price benchmark from gate 8. Tell the factory the target specification in terms of a named competitor and that competitor's dated shelf price, and give a target ex-factory ceiling from the back-calculation — for example: "target spec like competitor X at $Y (marketplace, date); target ex-factory below $Z (assumption-based ceiling, not a quote)."
+
+Do not contact a factory or supplier unless the user has explicitly agreed to that outreach. If they have not, leave the RFQ in the report and do not send it. Until quotes are in hand, the report must say **pending 8b**. A pending RFQ does not block the test verdict.
 
 When the user has agreed and quotes arrive, record verified MOQ, ex-factory price, certifications, lead time, and a margin built from those figures, and mark 8b **complete**. If those verified costs cannot work, 8b **fail** and the verdict becomes **reject**. If quotes never arrive, the test verdict may still stand, with 8b left pending and the missing factory costs labelled unverified.
 
 ### 9. Small-scale test
 
-Run creative and a landing page (or equivalent) as a small conversion test. Tooling and inventory come after the test works. Do not enter this gate if gate 8a or any earlier gate failed or was unverified on a must-have fact. A pending 8b does not block this gate. Do not spend money on ads unless the user explicitly asks after the earlier gates have passed.
+Run creative and a landing page (or equivalent) as a small conversion test. Tooling and inventory come after the test works. Do not enter this gate if gate 8 or any earlier gate failed or was unverified on a must-have fact. A pending 8b does not block this gate. Do not spend money on ads unless the user explicitly asks after the earlier gates have passed.
 
 When a testable offer is ready, cold-start with organic short-form videos that try pain hooks. Watch completion, not just views. Once a video clearly reaches high completion, and only if the user has asked to spend, put the first ad budget toward people who watched about 95% or more of that video, so the first seed customers are converted at the lowest measurable cost. Do not start with broad prospecting.
+
+## After you pick the product (brand-launch checklist)
+
+This section is optional. It is not a selection gate and must not change the verdict.
+
+Once a product has been picked — usually after **worth a small-scale test**, or when the user has already chosen a product to take forward — clear any brand name you actually want to use:
+
+- Search each name (exact and near marks, in relevant classes) on the official office for every target market in the run:
+  - United States: [USPTO Trademark Search](https://tmsearch.uspto.gov/)
+  - United Kingdom: [UK IPO trade mark search](https://trademarks.ipo.gov.uk/ipo-tmtext)
+  - Australia: [IP Australia Trade Mark Search](https://search.ipaustralia.gov.au/trademarks/search)
+  - Canada, when that market is in the run: [CIPO Canadian Trademarks Database](https://ised-isde.canada.ca/cipo/trademark-search/srch/)
+  - New Zealand, when selected: [IPONZ trade mark search](https://www.iponz.govt.nz/about-ip/trade-marks/search/)
+  - Ireland, when selected: [EUIPO eSearch](https://euipo.europa.eu/eSearch/), plus the national office if you can open it
+- `scripts/build_search_urls.py --names` prints these official start pages. Open them in a browser. Do not call undocumented internal search endpoints.
+- A third-party trademark site can be a lead, not a clearance. "No hits on an unofficial site" is not a clearance.
+- Candidate names stay uncleared ideas until this search is done. Completing the search is not a legal opinion.
+
+You may leave this section blank or marked "not started" during selection. A missing trademark search never makes the verdict **insufficient evidence — stop for now** or **reject**.
 
 ## Report
 
@@ -220,11 +248,11 @@ Always write a conclusion report from the language-matched template (`templates/
 - Recommended or evaluated form
 - Logistics and education-cost screen, including apparel return or hygiene risk when relevant
 - Vacuum judgment
-- Competitors and difference
-- Positioning, brand-name candidates, and the cross-category aesthetic reference
-- Claim boundaries
-- Gate 8a desk check: official trademark and patent search status, regulatory path, and a shelf-price economics sketch, with source links
-- Gate 8b supplier quotes: a filled RFQ, sent only with the user's OK, and the status **pending 8b** until quotes arrive
+- Competitors and difference, including dated shelf prices used later in gate 8
+- Positioning, claim boundaries, and the cross-category aesthetic reference; brand-name candidates only if offered, labelled uncleared
+- Gate 8 desk check: regulatory path, a patent quick look on the core feature, and a competitor-price cost benchmark with stated assumption percentages and source links
+- Gate 8b supplier quotes: a filled RFQ built around the competitor benchmark, sent only with the user's OK, and the status **pending 8b** until quotes arrive
+- After you pick the product: optional official trademark and name-clearance checklist; omit or leave unstarted during selection; this never affects the verdict
 - Per-gate status (pass, fail, unverified, complete, incomplete, pending, or not evaluated)
 - Final conclusion: exactly one of the three allowed verdicts
 - Open gaps (pages blocked, login walls, unpaid data)

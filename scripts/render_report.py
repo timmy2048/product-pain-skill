@@ -87,8 +87,8 @@ SECTION_KEYS = (
     "sources",
 )
 
-GATE_NUMBERS = ("0", "1", "2", "3", "4", "5", "6", "7", "8a", "8b", "9")
-LEGACY_GATE_ALIASES = {"8": "8a"}
+GATE_NUMBERS = ("0", "1", "2", "3", "4", "5", "6", "7", "8", "8b", "9")
+LEGACY_GATE_ALIASES = {"8a": "8"}
 STATUSES_COMMON = {"pass", "fail", "unverified", "not_evaluated"}
 STATUSES_GATE7 = {"complete", "incomplete", "not_evaluated"}
 STATUSES_GATE0 = {"complete", "incomplete", "not_evaluated", "skipped"}
@@ -226,15 +226,26 @@ def normalize_gate_key(number: object) -> str:
     return LEGACY_GATE_ALIASES.get(key, key)
 
 
-def lookup_status(gates: dict, number: str) -> str:
+def alias_keys(number: str) -> list[str]:
     number = normalize_gate_key(number)
-    raw = None
-    if number in gates:
-        raw = gates[number]
-    elif number == "8a" and "8" in gates:
-        raw = gates["8"]
-    elif number.isdigit() and int(number) in gates:
-        raw = gates[int(number)]
+    keys = [number]
+    for alias, canonical in LEGACY_GATE_ALIASES.items():
+        if canonical == number and alias not in keys:
+            keys.append(alias)
+    return keys
+
+
+def lookup_raw(gates: dict, number: str):
+    for key in alias_keys(number):
+        if key in gates:
+            return gates[key]
+        if key.isdigit() and int(key) in gates:
+            return gates[int(key)]
+    return None
+
+
+def lookup_status(gates: dict, number: str) -> str:
+    raw = lookup_raw(gates, number)
     if raw is None:
         return ""
     if isinstance(raw, dict):
@@ -260,10 +271,49 @@ def section_is_not_evaluated(value) -> bool:
     return text.startswith("Not evaluated") or text.startswith("未评估")
 
 
+def _status_text(raw) -> str:
+    if isinstance(raw, dict):
+        return str(raw.get("status") or "").strip().lower()
+    return str(raw or "").strip().lower()
+
+
 def normalize_facts(data: dict) -> dict:
-    """Accept older 'compliance' files as gate 8a desk notes."""
+    """Accept older field names: compliance, 8a, shelf_price_sketch, desk.trademark_search."""
     if "desk" not in data and "compliance" in data:
         data["desk"] = data["compliance"]
+    gates = data.get("gates")
+    if isinstance(gates, dict):
+        if "8" not in gates and "8a" in gates:
+            gates["8"] = gates["8a"]
+    desk = data.get("desk")
+    if isinstance(desk, dict):
+        sketch = desk.get("shelf_price_sketch")
+        if is_blank(desk.get("competitor_price_benchmark")) and not is_blank(sketch):
+            desk["competitor_price_benchmark"] = sketch
+            desk.pop("shelf_price_sketch", None)
+        elif not is_blank(desk.get("competitor_price_benchmark")) and desk.get(
+            "competitor_price_benchmark"
+        ) == sketch:
+            desk.pop("shelf_price_sketch", None)
+        trademark = desk.pop("trademark_search", None)
+        if not is_blank(trademark):
+            launch = data.get("brand_launch")
+            if is_blank(launch):
+                data["brand_launch"] = {
+                    "trademark_search": trademark,
+                    "note": (
+                        "Moved from desk notes. Official trademark search is "
+                        "optional, happens after a product is picked, and does "
+                        "not affect the selection verdict."
+                    ),
+                }
+            elif isinstance(launch, dict) and is_blank(launch.get("trademark_search")):
+                launch["trademark_search"] = trademark
+            elif isinstance(launch, str):
+                data["brand_launch"] = {
+                    "note": launch,
+                    "trademark_search": trademark,
+                }
     return data
 
 
@@ -317,6 +367,13 @@ def validate(data: dict) -> list[str]:
         ]
         if unknown_keys:
             errors.append("unknown gate keys: " + ", ".join(unknown_keys))
+        if "8" in gates and "8a" in gates:
+            left, right = _status_text(gates["8"]), _status_text(gates["8a"])
+            if left and right and left != right:
+                errors.append(
+                    "gates.8 and legacy gates.8a disagree "
+                    f"({left!r} vs {right!r}); use a single status for the desk check"
+                )
         for number in gates:
             status = lookup_status(gates, str(number))
             if not status:
@@ -338,21 +395,22 @@ def validate(data: dict) -> list[str]:
         statuses = {n: lookup_status(gates, n) for n in GATE_NUMBERS if lookup_status(gates, n)}
         reject_fails = any(
             statuses.get(n) == "fail" for n in ("1", "2", "3", "5", "6")
-        ) or statuses.get("4") == "fail" or statuses.get("8a") == "fail" or statuses.get("8b") == "fail"
+        ) or statuses.get("4") == "fail" or statuses.get("8") == "fail" or statuses.get("8b") == "fail"
         must_have_unverified = [
             n for n in GATE_NUMBERS
             if n != "8b" and statuses.get(n) == "unverified"
         ]
         has_unverified = bool(must_have_unverified) or statuses.get("7") == "incomplete" or statuses.get("0") == "incomplete"
-        early_pass = all(statuses.get(n) == "pass" for n in ("1", "2", "3", "4", "5", "6", "8a"))
+        early_pass = all(statuses.get(n) == "pass" for n in ("1", "2", "3", "4", "5", "6", "8"))
         gate7_complete = statuses.get("7") == "complete"
         gate8b = statuses.get("8b")
         if verdict == "worth a small-scale test":
             if not (early_pass and gate7_complete):
                 errors.append(
                     "verdict 'worth a small-scale test' requires gates 1–7 to pass "
-                    "(gate 7 complete) and gate 8a to pass; gate 8b may be pending "
-                    "and gate 9 may be not entered"
+                    "(gate 7 complete) and gate 8 to pass; gate 8b may be pending "
+                    "and gate 9 may be not entered; trademark search is optional "
+                    "and must not affect this verdict"
                 )
             elif gate8b not in {"pending", "not_sent", "complete"}:
                 errors.append(
@@ -363,7 +421,7 @@ def validate(data: dict) -> list[str]:
         elif verdict == "reject":
             if not reject_fails:
                 errors.append(
-                    "verdict 'reject' requires at least one fail among gates 1–6, 8a, or 8b"
+                    "verdict 'reject' requires at least one fail among gates 1–6, 8, or 8b"
                 )
         elif verdict == "insufficient evidence — stop for now":
             if reject_fails:
@@ -374,8 +432,9 @@ def validate(data: dict) -> list[str]:
             elif not has_unverified:
                 if early_pass and gate7_complete:
                     errors.append(
-                        "gates 1–7 and 8a all passed, so the verdict cannot be "
-                        "'insufficient evidence — stop for now' (gate 8b may stay pending)"
+                        "gates 1–7 and 8 all passed, so the verdict cannot be "
+                        "'insufficient evidence — stop for now' (gate 8b may stay pending; "
+                        "a missing trademark search does not count as insufficient evidence)"
                     )
                 elif not statuses:
                     errors.append(
@@ -395,15 +454,15 @@ def validate(data: dict) -> list[str]:
                 if st in {"fail", "unverified", "incomplete"}:
                     stopper = n
                     break
-        if stopper is None and statuses.get("8a") in {"fail", "unverified"}:
-            stopper = "8a"
+        if stopper is None and statuses.get("8") in {"fail", "unverified"}:
+            stopper = "8"
         if stopper is not None:
             if stopper in {"5", "6", "7"}:
-                blocked = ("8a", "8b", "9")
-            elif stopper == "8a":
+                blocked = ("8", "8b", "9")
+            elif stopper == "8":
                 blocked = ("8b", "9")
             else:
-                blocked = ("5", "6", "7", "8a", "8b", "9")
+                blocked = ("5", "6", "7", "8", "8b", "9")
             for n in blocked:
                 st = statuses.get(n)
                 if st and st not in {"not_evaluated", "not_entered"}:
@@ -454,7 +513,7 @@ def gate_status_block(data: dict, language: str) -> str:
         if not status:
             continue
         shown = status if language == "en" else status_zh.get(status, status)
-        raw = gates.get(n, gates.get(int(n) if n.isdigit() else n))
+        raw = lookup_raw(gates, n)
         extra = ""
         if isinstance(raw, dict) and raw.get("note"):
             extra = f" — {raw['note']}"
@@ -474,6 +533,25 @@ def default_gate0(data: dict, language: str) -> str:
             else "已跳过——用户已给出赛道、人群或痛点。"
         )
     return as_block({"status": status, "note": data.get("gate0")})
+
+
+def default_brand_launch(data: dict, language: str) -> str:
+    if not is_blank(data.get("brand_launch")):
+        return as_block(data.get("brand_launch"))
+    if language == "zh":
+        return (
+            "可选，不影响选品结论。品选定之后，如需启用某个品牌名，再在目标市场的"
+            "官方商标库检索（美国 USPTO、英国 UK IPO、澳大利亚 IP Australia；"
+            "如包含加拿大、新西兰或爱尔兰/欧盟，再查 CIPO、IPONZ 或 EUIPO）。"
+            "检索完成也不等于法律意见。在此之前，候选名都是未检索的想法。"
+        )
+    return (
+        "Optional, and not part of the selection verdict. After you pick a product, "
+        "search any name you actually want to use on the official trademark offices "
+        "for your markets (USPTO, UK IPO, IP Australia, and CIPO, IPONZ, or EUIPO "
+        "when those markets are in the run). Completing a search is not a legal "
+        "opinion. Candidate names stay uncleared until then."
+    )
 
 
 def render(data: dict) -> str:
@@ -505,6 +583,7 @@ def render(data: dict) -> str:
         "positioning": as_block(data.get("positioning")),
         "desk": as_block(data.get("desk")),
         "suppliers": as_block(data.get("suppliers")),
+        "brand_launch": default_brand_launch(data, language),
         "test": as_block(data.get("test")),
         "gate_status": gate_status_block(data, language),
         "gaps": as_block(data.get("gaps")),

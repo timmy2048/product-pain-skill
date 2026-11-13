@@ -2,11 +2,20 @@
 
 This is a draft to attach to a product-pain report at gate 8b. It is not a purchase order. Do not send it to a factory or supplier unless the user has explicitly agreed to that outreach.
 
+Use the competitor-price benchmark from the gate 8 desk check as the sample. Target specification and target ex-factory should be written against named competitors and their dated shelf prices. The cost ceiling is an assumption-based back-calculation, not a quote.
+
 - Date:
 - Project or working name:
 - Contact (only if the user has approved outreach):
 - Target markets:
 - Incoterms requested (if known):
+
+## Competitor benchmark
+
+- Reference competitor(s), dated shelf price(s), and marketplace or page:
+- Target specification: like competitor X at $Y (marketplace, date)
+- Target ex-factory: below $Z (ceiling back-calculated from that shelf price in the desk check; assumption, not a quote)
+- Assumption percentages used (marketplace fees, shipping or fulfillment, returns, ads, margin, and any inbound freight or duties):
 
 ## Product
 
@@ -36,5 +45,5 @@ This is a draft to attach to a product-pain report at gate 8b. It is not a purch
 ## Notes
 
 - Prices and lead times should be dated.
-- If a figure is an estimate, label it as an estimate.
+- If a figure is an estimate or an assumption, label it as such. Do not present the target ex-factory ceiling as a supplier quote.
 - Do not invent any of these figures to fill a report. Leave lines blank until a supplier answers.
