@@ -5,9 +5,19 @@ description: Use when screening a D2C product from a real category pain point, p
 
 # Product pain skill
 
-Collect inputs first, then run the gates in order. Stop when a gate fails. Do not jump to branding, tooling, or paid tests early. The conclusion must be exactly one of: **worth a small-scale test**, **reject**, or **insufficient evidence — stop for now**. Mark unverified facts as uncertain. Never invent volumes, factory prices, MOQ, or margins, and never promise sales results.
+Collect inputs first, then run the gates in order. Stop when a gate fails. After a stop, still write the full report: sections for gates that were not run must say **Not evaluated — stopped at gate N**. Do not jump to branding, tooling, or paid tests early. The conclusion must be exactly one of: **worth a small-scale test**, **reject**, or **insufficient evidence — stop for now**. Mark unverified facts as uncertain. Never invent volumes, factory prices, MOQ, or margins, and never promise sales results.
 
 This skill is model-agnostic. It works with any agent that can read this file, open public web pages, and write the report. Do not bind evidence collection to one model vendor.
+
+## Report language
+
+Write the conclusion report in the language the user asked for. If they do not specify a language, write it in English. The skill file and playbooks stay in English. When the report is not in English, translate the body and use these official verdict translations (the facts file still stores the English canonical verdict):
+
+- worth a small-scale test → 值得小规模测试
+- reject → 淘汰
+- insufficient evidence — stop for now → 证据不足先停
+
+Use `templates/report.md` for English and `templates/report.zh.md` for Chinese. For any other language, keep the English section order and translate the body by hand. `scripts/render_report.py --lang` (or `language` in the facts file) selects the shipped template; the default is English.
 
 ## Two entry points
 
@@ -21,9 +31,10 @@ If the user only names a market or says "find me a product," use Recommend. If t
 ## Inputs
 
 - Category, or products and brand names to exclude or that were already tried
-- Target market (if unspecified, default to English-speaking D2C markets, commonly the US, UK, and Australia)
+- Target market (if unspecified, default to English-speaking D2C markets, commonly the US, UK, and Australia). Canada, Ireland, and New Zealand may be added when the user asks; they are optional, not required defaults
 - Price band or budget, if any
 - Whether medical, hair-growth, or other efficacy claims are allowed as selling copy
+- Report language, if any
 
 If a key input is missing, use a reasonable default from context and state it in the report. Do not block reversible work just to ask more questions.
 
@@ -33,10 +44,38 @@ If a key input is missing, use a reasonable default from context and state it in
 - Ecommerce evidence is required. Check the channels the target market actually buys from (Amazon is the default for US/UK/AU; add other retailers or official brand sites when relevant). Trend charts and videos alone are not enough to call a pain real.
 - YouTube and similar routine content show how people use a product and what they complain about. Absolute search volume and ad-auction competition confirm demand size. Google Trends is optional direction, not a required gate.
 - Collect transcripts, volumes, prices, and reviews from pages or dedicated tools. The model only clusters, judges, and writes the conclusion. It does not invent evidence.
-- After the form and the logistics/education screen both pass, gates 5–7 may run in parallel. Gate 8 stays after those. Gate 9 is always last and must not run if any earlier gate failed.
+- After the form and the logistics/education screen both pass, gates 5–7 may run in parallel. If one of them fails, is unverified, or (for gate 7) is incomplete, finish any of 5–7 already in progress, then stop before gate 8. Gate 8 stays after those. Gate 9 is always last and must not run if any earlier gate failed or was unverified on a must-have fact.
 - Prefer public pages, official APIs, or a constructed search URL that a person or browser then opens. Do not use scrapers, credentials, or plugins that violate a site's terms of service. If a page is blocked or requires login, record the gap and treat the missing fact as unverified.
+- Official APIs for Reddit and the Meta Ad Library are optional accelerators when the user already has approved credentials. They are not required to finish a run, and you should not wait on API review before starting the gates. If credentials are missing, use public pages and record the gap. TikTok's Research API is limited to approved academic or non-profit researchers and is not a commercial selection tool. Amazon has no official API for 2–3-star review text; use the public "Customers say" summary and, when the user can sign in, the star-filtered reviews. USPTO name search has no official public API; use the official Trademark Search page in a browser. Do not call undocumented internal search endpoints.
 - Default to free, publicly reachable tools. Paid rank, review, or keyword suites are optional upgrades, never required dependencies for a complete run.
-- Shipping weight, restricted goods, and market-education cost can kill an otherwise valid pain-plus-demand idea. Screen them early, before deep brand and trademark work.
+- Shipping weight, restricted goods, return or hygiene rules, and market-education cost can kill an otherwise valid pain-plus-demand idea. Screen them early, before deep brand and trademark work.
+- Third-party trend blogs, shop-sales snapshots, and traffic estimates (for example Nolyn, Trenz, or Similarweb estimates) are leads only. They must not be used as evidence that gate 1 or gate 2 has passed. Look the same claim up on a required channel before it counts.
+- Every visible price used as evidence must include the date it was seen and the marketplace or page. Do not treat an editorial or press price as a live transaction price.
+
+## Gate status and verdicts
+
+Every evaluated gate gets exactly one status:
+
+- **pass** — the pass rule is met with evidence you actually opened.
+- **fail** — the fail rule is met.
+- **unverified** — a must-have fact could not be checked (blocked page, login wall, unpaid data, or missing source).
+- Gate 7 uses **complete** or **incomplete** instead of pass or fail. Incomplete is treated like unverified when choosing the verdict.
+- Gates not reached are **not evaluated**.
+
+Must-have facts are the ones named in each gate's Pass or Complete rule. Optional extras (for example Google Trends in gate 2) may stay unverified without failing the gate if the must-have evidence is present.
+
+Verdict mapping:
+
+| Outcome | Verdict |
+| --- | --- |
+| Any of gates 1–3, 5, or 6 **fail** | **reject** |
+| Gate 4 **fail** because shipping, restrictions, returns, or education cost is clearly unworkable at a realistic price | **reject** |
+| Gate 4 risk looks material but the cost cannot be verified | **insufficient evidence — stop for now** |
+| Any evaluated gate is **unverified**, or gate 7 is **incomplete** | **insufficient evidence — stop for now** |
+| Gates 1–8 all **pass** and gate 7 is **complete** | **worth a small-scale test** |
+| Gate 8 does not pass | Follow gate 8 as written. Do not invent figures. If required costs or the official IP search stay unverified, stop with **insufficient evidence — stop for now**. If evidence you actually opened already shows a clearly closed regulatory path, or a cost structure that cannot work, the verdict is **reject**. |
+
+Do not require gate 9 to have been entered in order to conclude **worth a small-scale test**. Gate 9 is the test plan that follows that verdict. If you stop early, still output every report section; unreached sections must be exactly: **Not evaluated — stopped at gate N**.
 
 ## Tooling (free first)
 
@@ -46,14 +85,27 @@ Use these defaults in v1. Paid alternatives may be added in the report as option
 | --- | --- | --- |
 | Pain in the wild | Reddit, Amazon, TikTok, YouTube public search | Follow `references/` playbooks. Build URLs with `scripts/build_search_urls.py`. |
 | Demand / search | Google Search plus a free volume overlay when available (for example Keyword Surfer); Google Trends for direction | Label third-party or extension figures as estimates. Never invent official Keyword Planner volumes. |
-| Reviews and competitors | Amazon public product pages, especially 2–3 star reviews | See `references/amazon.md`. Brand sites are a supplement, not a substitute. |
-| Ad spend signals | Meta Ad Library | Longevity and ad count are spend/expansion clues, not proof of profit. |
-| Site traffic | Similarweb free snapshot | If the free view is empty or paywalled, mark traffic as unknown. |
-| Trademarks and patents | USPTO public trademark search, Google Patents | Incomplete official search means the IP gate is not passed. |
+| Reviews and competitors | Amazon public product pages, especially "Customers say" and 2–3 star reviews when a signed-in browser can open them | See `references/amazon.md`. Brand sites are a supplement, not a substitute. |
+| Ad spend signals | Meta Ad Library (public page, or the official API when the user has a token) | Longevity and ad count are spend/expansion clues, not proof of profit. |
+| Site traffic | Similarweb free snapshot | If the free view is empty or paywalled, mark traffic as unknown. Treat figures as estimates and as leads, not as gate 1–2 evidence. |
+| Trademarks and patents | USPTO public trademark search in a browser, Google Patents | Incomplete official search means the IP gate is not passed. |
 
 Channel playbooks: `references/reddit.md`, `references/amazon.md`, `references/tiktok.md`, `references/youtube.md`. Tool notes: `references/tools.md`.
 
 ## Gates
+
+### 0. Pick a category (recommend mode only, when none is given)
+
+If recommend mode already has a category, audience, or pain, skip this gate and start at gate 1. If the user asked you to find a product and named no category, list 3–5 candidates from these free signals (use only the ones you can actually open):
+
+- Amazon Movers & Shakers on the target marketplace
+- Google Trends rising or breakout queries, when available
+- TikTok Creative Center, if the page opens
+- Reddit posts matching pain patterns such as "wish there was"
+
+`scripts/build_search_urls.py --discover` prints these destinations. Score each candidate on season (including inverted seasons for Australia versus the US and UK), apparent pain density, and logistics risk. Pick one, write down why, and then run gates 1–9 on that pick. Third-party shop-trend articles may suggest names to look up; they are not themselves a validated signal.
+
+This gate is **complete** when a pick and a reason are written down. If you cannot open any of the named signals, the run stops with **insufficient evidence — stop for now**.
 
 ### 1. Define the category and mine the pain
 
@@ -71,13 +123,15 @@ Pass: people are already looking for a solution, and demand does not look like i
 
 Fail: volume is tiny, clearly declining, or you only have relative trend lines with no magnitude and cannot backfill other demand evidence.
 
+For Australia, treat seasons as inverted relative to the US and UK. A US or UK autumn or winter peak does not by itself show Australian demand in the same calendar months. Say whether you are looking at Australia's in-season or off-season window.
+
 ### 3. Infer the product form
 
 Translate the pain into what to make, and what not to make.
 
-Pass: the form maps to the pain, and the difference from current forms can be stated in plain language.
+Pass: the form maps to the pain, and the difference from current forms can be stated in plain language. A real difference is something a buyer or a factory can check on a competitor page: construction, a sizing system, materials, or the occasion it is made for.
 
-Fail: the form does not address the pain, or it is only a reskin of products that already exist.
+Fail: the form does not address the pain, or it is only a reskin of products that already exist. A new slogan, a colorway, or a claim already printed on competing listings is a reskin. If every named difference is already visible on a current product page, this gate fails.
 
 ### 4. Screen logistics and market-education cost
 
@@ -85,7 +139,9 @@ Do this before brand, trademark, and deep competitive work.
 
 Fail or stop if the idea is clearly expensive to ship or to explain relative to a realistic retail price: heavy or bulky goods, wet wipes and other liquids, batteries or hazardous materials, or a product that requires teaching a new habit before anyone will buy it. A trending, unbranded pain is not enough if fulfillment or education would dominate cost.
 
-If shipping or education cost cannot be verified, do not invent it. Mark the uncertainty. If the risk looks material, the allowed conclusion at this gate is **insufficient evidence — stop for now**.
+For apparel, footwear, and intimates, also screen return rate and hygiene rules. Many of these goods are non-returnable once worn, or have a return rate that can erase margin. If that risk is material and you cannot verify it, mark it unverified. If it is clearly unworkable at a realistic price, fail this gate.
+
+If shipping, returns, or education cost cannot be verified, do not invent it. Mark the uncertainty. If the risk looks material, the allowed conclusion at this gate is **insufficient evidence — stop for now**.
 
 ### 5. Brand vacuum
 
@@ -99,13 +155,19 @@ Fail: a dominant brand has locked the category and already solved the pain. The 
 
 Keep using ecommerce reviews, returns, Q&A, and reputable roundups.
 
-Pass: there is a verifiable difference in form, experience, aesthetic, price band, or use occasion — not a slogan.
+Pass: there is a verifiable difference in form, experience, aesthetic, price band, or use occasion — not a slogan. The difference must be checkable on competitor pages (construction, sizing system, materials, or occasion), not only claimed in copy.
+
+Fail: the only difference is a claim or a slogan, or every claimed difference is already on a competitor page.
 
 ### 7. Positioning, name candidates, and claim boundaries
 
 Write the target user, aesthetic references, two or three brand-name candidates, and claims that must not be used (especially medical or efficacy claims). This gate does not clear a trademark; that belongs in gate 8. Treat name candidates as unregistered ideas only.
 
 For aesthetic references, do not copy the look of established competitors in the same category. Borrow from a brand the target audience already loves in a *different* category — for example a pet product taking cues from Aesop or Muji, or a sports accessory taking cues from Rhode or Glossier. Name the reference brand and why this audience already likes it. The goal is a look that stands apart on the same shelf, not a reskin of a category incumbent.
+
+Complete: the write-up includes a target user, a cross-category aesthetic reference with a reason, two or three name candidates, and claim boundaries.
+
+Incomplete: any of those is missing.
 
 ### 8. Compliance, IP, supply chain, and unit economics
 
@@ -121,18 +183,21 @@ When a testable offer is ready, cold-start with organic short-form videos that t
 
 ## Report
 
-Always write a conclusion report from `templates/report.md`. You may use `scripts/render_report.py` to fill and validate it. Required sections:
+Always write a conclusion report from the language-matched template (`templates/report.md` or `templates/report.zh.md`). You may use `scripts/render_report.py` to fill and validate it. Required sections:
 
 - Mode (recommend or reverse) and inputs used, including defaults
+- Report language
+- Category pick (gate 0), or a note that it was skipped
 - Pain statement
 - Demand evidence
 - Recommended or evaluated form
-- Logistics and education-cost screen
+- Logistics and education-cost screen, including apparel return or hygiene risk when relevant
 - Vacuum judgment
 - Competitors and difference
 - Positioning, brand-name candidates, and the cross-category aesthetic reference
 - Claim boundaries
 - Compliance, IP, and cost status, with source links
+- Per-gate status (pass, fail, unverified, complete, incomplete, or not evaluated)
 - Final conclusion: exactly one of the three allowed verdicts
 - Open gaps (pages blocked, login walls, unpaid data)
 

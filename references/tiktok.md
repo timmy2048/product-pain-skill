@@ -6,8 +6,11 @@ Use TikTok for short-form demand language: what people ask for under videos, whi
 
 - Keyword search: `https://www.tiktok.com/search?q={query}`
 - URLs from `scripts/build_search_urls.py`
+- For gate 0 discovery, TikTok Creative Center if the page opens: `https://ads.tiktok.com/business/creativecenter/inspiration/popular/hashtag/pc/en`
 
 Look at public video captions, on-screen text, and public comments. For reverse demand, prioritize comments like "where can I buy this," "I need this for…," "why doesn't it…," or "I would buy if…"
+
+Keyword search and many comment threads are browser-dependent. Automated fetches often redirect to an error or status page, or time out. If that happens, open the public page in a browser or record the gap. Press coverage and third-party Shop-sales snapshots may be listed as labelled leads; they are not a substitute for comments or captions you opened yourself, and they are not evidence for gates 1–2.
 
 ## What counts
 
@@ -22,3 +25,5 @@ TikTok keyword search is a free discovery tool. Paid ad-library coverage for Tik
 ## Access
 
 Use public search and public comments only. Do not use unofficial downloaders or comment scrapers. If a video or region is unavailable, record the gap.
+
+TikTok's [Research API](https://developers.tiktok.com/products/research-api/) can read public comments, but it is limited to approved academic or non-profit researchers and explicitly excludes commercial use. Do not use it for product selection. There is no official commercial comments API for this skill.

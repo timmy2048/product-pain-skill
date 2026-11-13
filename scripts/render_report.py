@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fill templates/report.md from a JSON facts file and refuse unknown verdicts."""
+"""Fill a language-matched report template from a JSON facts file and validate it."""
 
 from __future__ import annotations
 
@@ -10,10 +10,45 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-ALLOWED_VERDICTS = {
+REPO_ROOT = Path(__file__).resolve().parent.parent
+TEMPLATE_PATHS = {
+    "en": REPO_ROOT / "templates" / "report.md",
+    "zh": REPO_ROOT / "templates" / "report.zh.md",
+}
+
+CANONICAL_VERDICTS = {
     "worth a small-scale test",
     "reject",
     "insufficient evidence — stop for now",
+}
+
+VERDICT_ALIASES = {
+    "worth a small-scale test": "worth a small-scale test",
+    "reject": "reject",
+    "insufficient evidence — stop for now": "insufficient evidence — stop for now",
+    "insufficient evidence – stop for now": "insufficient evidence — stop for now",
+    "insufficient evidence - stop for now": "insufficient evidence — stop for now",
+    "值得小规模测试": "worth a small-scale test",
+    "淘汰": "reject",
+    "证据不足先停": "insufficient evidence — stop for now",
+}
+
+VERDICT_DISPLAY = {
+    "en": {
+        "worth a small-scale test": "worth a small-scale test",
+        "reject": "reject",
+        "insufficient evidence — stop for now": "insufficient evidence — stop for now",
+    },
+    "zh": {
+        "worth a small-scale test": "值得小规模测试",
+        "reject": "淘汰",
+        "insufficient evidence — stop for now": "证据不足先停",
+    },
+}
+
+MODE_DISPLAY = {
+    "en": {"recommend": "recommend", "reverse": "reverse"},
+    "zh": {"recommend": "推荐选品", "reverse": "反推评估"},
 }
 
 REQUIRED_FIELDS = (
@@ -31,9 +66,32 @@ REQUIRED_FIELDS = (
     "test",
     "gaps",
     "sources",
+    "inputs",
+    "markets",
 )
 
-TEMPLATE_REL = Path(__file__).resolve().parent.parent / "templates" / "report.md"
+SECTION_KEYS = (
+    "gate0",
+    "pain",
+    "demand",
+    "form",
+    "logistics",
+    "vacuum",
+    "competitors",
+    "positioning",
+    "compliance",
+    "test",
+    "gaps",
+    "sources",
+)
+
+GATE_NUMBERS = ("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
+STATUSES_COMMON = {"pass", "fail", "unverified", "not_evaluated"}
+STATUSES_GATE7 = {"complete", "incomplete", "not_evaluated"}
+STATUSES_GATE0 = {"complete", "incomplete", "not_evaluated", "skipped"}
+STATUSES_GATE9 = {"pass", "fail", "unverified", "not_evaluated", "entered", "not_entered"}
+
+NOT_EVALUATED_PREFIX = "Not evaluated — stopped at gate"
 
 
 def load_json(path: Path) -> dict:
@@ -43,14 +101,147 @@ def load_json(path: Path) -> dict:
     return data
 
 
+def normalize_verdict(value: object) -> str:
+    text = " ".join(str(value or "").strip().split())
+    if text in VERDICT_ALIASES:
+        return VERDICT_ALIASES[text]
+    collapsed = (
+        text.replace("–", "-")
+        .replace("—", "-")
+        .replace("−", "-")
+    )
+    for raw, canonical in VERDICT_ALIASES.items():
+        if raw.replace("–", "-").replace("—", "-").replace("−", "-") == collapsed:
+            return canonical
+    return text
+
+
+def as_inline(value) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        parts = [as_inline(item) for item in value if as_inline(item)]
+        return "; ".join(parts)
+    if isinstance(value, dict):
+        parts = []
+        for key, item in value.items():
+            rendered = as_inline(item)
+            if rendered:
+                parts.append(f"{_label(key)}: {rendered}")
+        return "; ".join(parts)
+    return str(value).strip()
+
+
+def _label(key: str) -> str:
+    return str(key).replace("_", " ")
+
+
 def as_block(value) -> str:
     if value is None:
         return "Unverified."
     if isinstance(value, list):
-        items = [str(item).strip() for item in value if str(item).strip()]
-        return "\n".join(f"- {item}" for item in items) if items else "Unverified."
+        items = [item for item in value if as_inline(item) or isinstance(item, (list, dict))]
+        if not items:
+            return "Unverified."
+        lines: list[str] = []
+        for item in items:
+            if isinstance(item, dict):
+                lines.append(f"- {as_inline(item)}")
+            elif isinstance(item, list):
+                lines.append(f"- {as_inline(item)}")
+            else:
+                lines.append(f"- {str(item).strip()}")
+        return "\n".join(lines)
+    if isinstance(value, dict):
+        if not value:
+            return "Unverified."
+        if set(value.keys()) <= {"status", "stopped_at", "note"} and value.get("status") in {
+            "not_evaluated",
+            "skipped",
+            "not_entered",
+        }:
+            note = str(value.get("note") or "").strip()
+            if note:
+                return note
+            stopped = value.get("stopped_at")
+            if stopped is not None:
+                return f"{NOT_EVALUATED_PREFIX} {stopped}"
+            if value.get("status") == "skipped":
+                return "Skipped — a category, audience, or pain was already given."
+            if value.get("status") == "not_entered":
+                return "Not entered."
+            return f"{NOT_EVALUATED_PREFIX} ?"
+        lines = []
+        for key, item in value.items():
+            if isinstance(item, list):
+                rendered = as_block(item)
+                if "\n" in rendered:
+                    lines.append(f"- {_label(key)}:")
+                    for row in rendered.splitlines():
+                        lines.append(f"  {row}")
+                else:
+                    lines.append(f"- {_label(key)}: {rendered.removeprefix('- ')}")
+            elif isinstance(item, dict):
+                lines.append(f"- {_label(key)}:")
+                for row in as_block(item).splitlines():
+                    lines.append(f"  {row}")
+            else:
+                text = str(item).strip() if item is not None else ""
+                lines.append(f"- {_label(key)}: {text if text else 'Unverified.'}")
+        return "\n".join(lines) if lines else "Unverified."
     text = str(value).strip()
     return text if text else "Unverified."
+
+
+def is_blank(value) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return not value.strip()
+    if isinstance(value, list):
+        return not any(not is_blank(item) for item in value)
+    if isinstance(value, dict):
+        return not any(not is_blank(item) for item in value.values())
+    return False
+
+
+def nested_get(data: dict, *keys: str):
+    for key in keys:
+        if key in data and not is_blank(data[key]):
+            return data[key]
+    positioning = data.get("positioning")
+    if isinstance(positioning, dict):
+        for key in keys:
+            if key in positioning and not is_blank(positioning[key]):
+                return positioning[key]
+    return None
+
+
+def lookup_status(gates: dict, number: str) -> str:
+    if number in gates:
+        raw = gates[number]
+    elif number.isdigit() and int(number) in gates:
+        raw = gates[int(number)]
+    else:
+        return ""
+    if isinstance(raw, dict):
+        return str(raw.get("status") or "").strip().lower()
+    return str(raw or "").strip().lower()
+
+
+def allowed_statuses(number: str) -> set[str]:
+    if number == "0":
+        return STATUSES_GATE0
+    if number == "7":
+        return STATUSES_GATE7
+    if number == "9":
+        return STATUSES_GATE9
+    return STATUSES_COMMON
+
+
+def section_is_not_evaluated(value) -> bool:
+    text = as_block(value)
+    return text.startswith("Not evaluated") or text.startswith("未评估")
 
 
 def validate(data: dict) -> list[str]:
@@ -58,88 +249,234 @@ def validate(data: dict) -> list[str]:
     missing = [key for key in REQUIRED_FIELDS if key not in data]
     if missing:
         errors.append("missing fields: " + ", ".join(missing))
-    mode = str(data.get("mode", "")).strip().lower()
-    if mode and mode not in {"recommend", "reverse"}:
-        errors.append("mode must be 'recommend' or 'reverse'")
-    verdict = str(data.get("verdict", "")).strip()
-    if verdict and verdict not in ALLOWED_VERDICTS:
+
+    language = str(data.get("language") or "en").strip().lower()
+    if language not in TEMPLATE_PATHS:
         errors.append(
-            "verdict must be exactly one of: " + " | ".join(sorted(ALLOWED_VERDICTS))
+            "language must be 'en' or 'zh' for the shipped templates; "
+            "write other languages from the English template by hand"
         )
+
+    mode = str(data.get("mode") or "").strip().lower()
+    if not mode:
+        errors.append("mode must be 'recommend' or 'reverse' (empty is not allowed)")
+    elif mode not in {"recommend", "reverse"}:
+        errors.append("mode must be 'recommend' or 'reverse'")
+
+    raw_verdict = str(data.get("verdict") or "").strip()
+    verdict = normalize_verdict(raw_verdict)
+    if not raw_verdict:
+        errors.append(
+            "verdict must be exactly one of: "
+            + " | ".join(sorted(CANONICAL_VERDICTS))
+            + " (empty is not allowed)"
+        )
+    elif verdict not in CANONICAL_VERDICTS:
+        errors.append(
+            "verdict must be exactly one of: "
+            + " | ".join(sorted(CANONICAL_VERDICTS))
+            + f" (got {raw_verdict!r})"
+        )
+
+    for key in ("inputs", "markets", "rationale"):
+        if key in data and is_blank(data.get(key)):
+            errors.append(f"{key} must not be empty")
+
+    # claims and aesthetic reference are required unless gate 7 was not reached
+    gates = data.get("gates")
+    gate7 = ""
+    if isinstance(gates, dict):
+        gate7 = lookup_status(gates, "7")
+        unknown_keys = [str(k) for k in gates if str(k) not in GATE_NUMBERS]
+        if unknown_keys:
+            errors.append("unknown gate keys: " + ", ".join(unknown_keys))
+        for number in gates:
+            status = lookup_status(gates, str(number))
+            if not status:
+                errors.append(f"gates.{number} is missing a status")
+            elif status not in allowed_statuses(str(number)):
+                allowed = ", ".join(sorted(allowed_statuses(str(number))))
+                errors.append(f"gates.{number} status must be one of: {allowed} (got {status!r})")
+    elif gates is not None:
+        errors.append("gates must be an object keyed by gate number")
+
+    needs_positioning_details = gate7 not in {"not_evaluated", "skipped"}
+    if needs_positioning_details:
+        if is_blank(nested_get(data, "aesthetic_reference", "cross_category_aesthetic_reference")):
+            errors.append("aesthetic_reference is required unless gate 7 is not_evaluated")
+        if is_blank(nested_get(data, "claims", "claim_boundaries")):
+            errors.append("claims (claim boundaries) are required unless gate 7 is not_evaluated")
+
+    if isinstance(gates, dict) and verdict in CANONICAL_VERDICTS:
+        statuses = {n: lookup_status(gates, n) for n in GATE_NUMBERS if lookup_status(gates, n)}
+        reject_fails = any(
+            statuses.get(n) == "fail" for n in ("1", "2", "3", "5", "6")
+        ) or statuses.get("4") == "fail" or statuses.get("8") == "fail"
+        has_unverified = any(
+            statuses.get(n) == "unverified" for n in GATE_NUMBERS
+        ) or statuses.get("7") == "incomplete" or statuses.get("0") == "incomplete"
+        early_pass = all(statuses.get(n) == "pass" for n in ("1", "2", "3", "4", "5", "6", "8"))
+        gate7_complete = statuses.get("7") == "complete"
+        if verdict == "worth a small-scale test":
+            if not (early_pass and gate7_complete):
+                errors.append(
+                    "verdict 'worth a small-scale test' requires gates 1–8 to pass "
+                    "and gate 7 to be complete (gate 9 may be not entered)"
+                )
+        elif verdict == "reject":
+            if not reject_fails:
+                errors.append(
+                    "verdict 'reject' requires at least one fail among gates 1–6 or 8"
+                )
+        elif verdict == "insufficient evidence — stop for now":
+            if reject_fails:
+                errors.append(
+                    "a reject-level fail is present; verdict must be 'reject', "
+                    "not 'insufficient evidence — stop for now'"
+                )
+            elif not has_unverified and statuses.get("4") != "unverified":
+                # allow insufficient evidence when later required sections are not_evaluated
+                # after an unverified stop, or when gate 8 is unverified, or when no gates
+                # were fully passed through 8
+                if early_pass and gate7_complete:
+                    errors.append(
+                        "gates 1–8 all passed, so the verdict cannot be "
+                        "'insufficient evidence — stop for now'"
+                    )
+                elif not statuses:
+                    errors.append(
+                        "verdict 'insufficient evidence — stop for now' needs a gates object "
+                        "with at least one unverified or incomplete gate"
+                    )
+
+        # If an early gate (1-4) failed or is unverified, 8 and 9 should not be passed/entered
+        stopper = None
+        for n in ("0", "1", "2", "3", "4"):
+            st = statuses.get(n)
+            if st in {"fail", "unverified", "incomplete"}:
+                stopper = n
+                break
+        if stopper is None:
+            for n in ("5", "6", "7"):
+                st = statuses.get(n)
+                if st in {"fail", "unverified", "incomplete"}:
+                    stopper = n
+                    break
+        if stopper is not None:
+            blocked = ("8", "9") if stopper in {"5", "6", "7"} else ("5", "6", "7", "8", "9")
+            # 5-7 may still be evaluated if they ran in parallel and stopper is 5-7
+            if stopper in {"5", "6", "7"}:
+                blocked = ("8", "9")
+            for n in blocked:
+                st = statuses.get(n)
+                if st and st not in {"not_evaluated", "not_entered"}:
+                    errors.append(
+                        f"gates.{n} must be not_evaluated (or not_entered) because the run "
+                        f"stopped at gate {stopper}"
+                    )
+
     return errors
 
 
-def render(data: dict) -> str:
+def format_date(data: dict) -> str:
+    if data.get("date"):
+        return str(data["date"])
     timezone = str(data.get("timezone") or "Asia/Shanghai")
     try:
-        now = datetime.now(ZoneInfo(timezone)).strftime("%Y-%m-%d %H:%M %Z")
+        now = datetime.now(ZoneInfo(timezone))
+        return f"{now.strftime('%Y-%m-%d %H:%M %z')} ({timezone})"
     except Exception:
-        now = datetime.now().strftime("%Y-%m-%d %H:%M")
-        timezone = "unspecified"
-    date_line = data.get("date") or f"{now} ({timezone})"
-    markets = data.get("markets") or "English-speaking D2C (default US, UK, AU)"
-    if isinstance(markets, list):
-        markets_line = ", ".join(str(m) for m in markets)
-    else:
-        markets_line = str(markets)
-    inputs = data.get("inputs") or "See body."
-    return f"""# Product pain report
+        now = datetime.now().astimezone()
+        return f"{now.strftime('%Y-%m-%d %H:%M %z')} (local)"
 
-- Date (timezone): {date_line}
-- Mode: {data.get("mode")}
-- Target markets: {markets_line}
-- Inputs and defaults used: {as_block(inputs)}
 
-## Verdict
+def gate_status_block(data: dict, language: str) -> str:
+    gates = data.get("gates")
+    if not isinstance(gates, dict) or not gates:
+        return "Unverified." if language == "en" else "未核实。"
+    labels = {
+        "en": {n: f"Gate {n}" for n in GATE_NUMBERS},
+        "zh": {n: f"第 {n} 关" for n in GATE_NUMBERS},
+    }[language]
+    status_zh = {
+        "pass": "通过",
+        "fail": "未通过",
+        "unverified": "未核实",
+        "complete": "已完成",
+        "incomplete": "未完成",
+        "not_evaluated": "未评估",
+        "skipped": "跳过",
+        "entered": "已进入",
+        "not_entered": "未进入",
+    }
+    lines = []
+    for n in GATE_NUMBERS:
+        status = lookup_status(gates, n)
+        if not status:
+            continue
+        shown = status if language == "en" else status_zh.get(status, status)
+        raw = gates.get(n, gates.get(int(n) if n.isdigit() else n))
+        extra = ""
+        if isinstance(raw, dict) and raw.get("note"):
+            extra = f" — {raw['note']}"
+        lines.append(f"- {labels[n]}: {shown}{extra}")
+    return "\n".join(lines) if lines else ("Unverified." if language == "en" else "未核实。")
 
-{data.get("verdict")}
 
-{as_block(data.get("rationale"))}
+def default_gate0(data: dict, language: str) -> str:
+    if not is_blank(data.get("gate0")):
+        return as_block(data.get("gate0"))
+    gates = data.get("gates") if isinstance(data.get("gates"), dict) else {}
+    status = lookup_status(gates, "0") if gates else "skipped"
+    if status in {"skipped", ""}:
+        return (
+            "Skipped — a category, audience, or pain was already given."
+            if language == "en"
+            else "已跳过——用户已给出赛道、人群或痛点。"
+        )
+    return as_block({"status": status, "note": data.get("gate0")})
 
-## 1. Pain statement
 
-{as_block(data.get("pain"))}
-
-## 2. Demand evidence
-
-{as_block(data.get("demand"))}
-
-## 3. Product form
-
-{as_block(data.get("form"))}
-
-## 4. Logistics and education cost
-
-{as_block(data.get("logistics"))}
-
-## 5. Brand vacuum
-
-{as_block(data.get("vacuum"))}
-
-## 6. Competitors and difference
-
-{as_block(data.get("competitors"))}
-
-## 7. Positioning and names
-
-{as_block(data.get("positioning"))}
-
-## 8. Compliance, IP, supply chain, unit economics
-
-{as_block(data.get("compliance"))}
-
-## 9. Small-scale test
-
-{as_block(data.get("test"))}
-
-## Open gaps
-
-{as_block(data.get("gaps"))}
-
-## Sources
-
-{as_block(data.get("sources"))}
-"""
+def render(data: dict) -> str:
+    language = str(data.get("language") or "en").strip().lower() or "en"
+    template_path = TEMPLATE_PATHS.get(language, TEMPLATE_PATHS["en"])
+    template = template_path.read_text(encoding="utf-8")
+    verdict = normalize_verdict(data.get("verdict"))
+    display_verdict = VERDICT_DISPLAY.get(language, VERDICT_DISPLAY["en"]).get(verdict, verdict)
+    mode = str(data.get("mode") or "").strip().lower()
+    display_mode = MODE_DISPLAY.get(language, MODE_DISPLAY["en"]).get(mode, mode)
+    markets = as_inline(data.get("markets"))
+    inputs = as_inline(data.get("inputs"))
+    replacements = {
+        "date": format_date(data),
+        "language": language,
+        "mode": display_mode,
+        "markets": markets,
+        "inputs": inputs,
+        "verdict": display_verdict,
+        "rationale": as_block(data.get("rationale")),
+        "gate0": default_gate0(data, language),
+        "pain": as_block(data.get("pain")),
+        "demand": as_block(data.get("demand")),
+        "form": as_block(data.get("form")),
+        "logistics": as_block(data.get("logistics")),
+        "vacuum": as_block(data.get("vacuum")),
+        "competitors": as_block(data.get("competitors")),
+        "positioning": as_block(data.get("positioning")),
+        "compliance": as_block(data.get("compliance")),
+        "test": as_block(data.get("test")),
+        "gate_status": gate_status_block(data, language),
+        "gaps": as_block(data.get("gaps")),
+        "sources": as_block(data.get("sources")),
+    }
+    out = template
+    for key, value in replacements.items():
+        out = out.replace("{{" + key + "}}", value)
+    leftover = [part for part in out.split("{{")[1:] if "}}" in part]
+    if leftover:
+        names = ", ".join(part.split("}}", 1)[0] for part in leftover)
+        raise ValueError(f"unfilled template placeholders: {names}")
+    return out if out.endswith("\n") else out + "\n"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -148,6 +485,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--input", required=True, help="Path to a JSON object of report facts.")
     parser.add_argument("--out", required=True, help="Path to write the Markdown report.")
+    parser.add_argument(
+        "--lang",
+        default=None,
+        help="Report language: en or zh. Overrides facts.language. Default: English.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.input)
@@ -157,15 +499,26 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: cannot read facts: {exc}", file=sys.stderr)
         return 2
 
+    if args.lang:
+        data["language"] = args.lang.strip().lower()
+    else:
+        data.setdefault("language", "en")
+
     errors = validate(data)
     if errors:
         for item in errors:
             print(f"error: {item}", file=sys.stderr)
         return 2
 
+    try:
+        text = render(data)
+    except (OSError, ValueError) as exc:
+        print(f"error: cannot render report: {exc}", file=sys.stderr)
+        return 2
+
     output = Path(args.out)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(render(data), encoding="utf-8")
+    output.write_text(text, encoding="utf-8")
     print(f"wrote {output}")
     return 0
 

@@ -9,6 +9,8 @@ Use YouTube to see how people actually use a product, what they complain about i
 
 Include how-to, review, "I tried," haul, and complaint videos. Read public titles, descriptions, comments, and, when a public transcript is available, the transcript. The model should not invent captions. Any capable transcript or comment tool is fine; do not bind this step to one vendor.
 
+Some comment or transcript tools charge credits (for example, a comment pull may cost more than a search or a single transcript). If a tool is out of credits, say so, and either fall back to the official [YouTube Data API v3](https://developers.google.com/youtube/v3) when the user has an API key, or read the public watch page and any comments you can actually see. Do not invent comment text to fill the gap.
+
 ## What counts
 
 - Recurring use problems (fit, time, mess, durability, confusing setup)
