@@ -535,6 +535,47 @@ def default_gate0(data: dict, language: str) -> str:
     return as_block({"status": status, "note": data.get("gate0")})
 
 
+def default_channel_coverage(data: dict, language: str) -> str:
+    value = data.get("channel_coverage")
+    if is_blank(value) and isinstance(data.get("channels"), (dict, list, str)):
+        value = data.get("channels")
+    if not is_blank(value):
+        return as_block(value)
+    if language == "zh":
+        return (
+            "此份事实文件未记录渠道覆盖。正式报告须写明 Reddit、TikTok、YouTube "
+            "和 Amazon 美/英/澳哪些实际拿到了数据、哪些失败。"
+            "缺必须证据时应改为「证据不足先停」，不要把未核过的关卡写成通过。"
+        )
+    return (
+        "Not recorded in this facts file. For a real run, list which of Reddit, "
+        "TikTok, YouTube, and Amazon US/UK/AU actually returned data and which "
+        "failed. Missing must-have evidence means insufficient evidence — stop "
+        "for now, not a guessed pass."
+    )
+
+
+def default_review_source(data: dict, language: str) -> str:
+    value = data.get("review_source")
+    if is_blank(value) and not is_blank(data.get("amazon_review_source")):
+        value = data.get("amazon_review_source")
+    if not is_blank(value):
+        return as_block(value)
+    if language == "zh":
+        return (
+            "此份事实文件未记录评论来源。正式报告须写明用的是公开 “Customers say” "
+            "与精选评论、登录后的浏览器 2–3 星筛选、卖家工具（Helium 10 / Jungle Scout / "
+            "Sellersprite），还是用户自愿启用的抓取脚本，以及覆盖是否不完整。"
+        )
+    return (
+        "Not recorded in this facts file. For a real run, state which Amazon "
+        "review source was used (public Customers say / featured reviews, "
+        "manual signed-in browser, a seller tool such as Helium 10, Jungle "
+        "Scout, or Sellersprite, or an opt-in scraper) and whether coverage "
+        "is partial."
+    )
+
+
 def default_brand_launch(data: dict, language: str) -> str:
     if not is_blank(data.get("brand_launch")):
         return as_block(data.get("brand_launch"))
@@ -586,6 +627,8 @@ def render(data: dict) -> str:
         "brand_launch": default_brand_launch(data, language),
         "test": as_block(data.get("test")),
         "gate_status": gate_status_block(data, language),
+        "channel_coverage": default_channel_coverage(data, language),
+        "review_source": default_review_source(data, language),
         "gaps": as_block(data.get("gaps")),
         "sources": as_block(data.get("sources")),
     }

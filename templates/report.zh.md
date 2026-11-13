@@ -64,6 +64,14 @@
 
 {{gate_status}}
 
+## 渠道覆盖
+
+{{channel_coverage}}
+
+## 评论来源
+
+{{review_source}}
+
 ## 未核实缺口
 
 {{gaps}}

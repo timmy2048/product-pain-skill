@@ -1,6 +1,6 @@
 # TikTok playbook
 
-Use TikTok for short-form demand language: what people ask for under videos, which hooks already run, and whether a pain is already being sold.
+TikTok is one of the three required social channels, and its role is **content heat**: which hooks already run, how active short-form posting is around the pain, and whether a workaround is already being demonstrated. It is not a substitute for Reddit or YouTube pain evidence in gate 1.
 
 ## Where to search
 

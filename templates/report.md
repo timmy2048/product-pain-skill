@@ -64,6 +64,14 @@
 
 {{gate_status}}
 
+## Channel coverage
+
+{{channel_coverage}}
+
+## Review source
+
+{{review_source}}
+
 ## Open gaps
 
 {{gaps}}

@@ -39,10 +39,11 @@
   },
   "vacuum": {
     "judgment": "Whether a dominant brand already solves this pain.",
+    "standalone_sites": "For each of the top 3-5 Amazon sellers: own site or none found, Shopify or not, Meta Ad Library ads, and on-site reviews. This example did not actually check.",
     "status": "pass"
   },
   "competitors": {
-    "set": "Listings, visible prices with dates and marketplaces, and the verifiable difference.",
+    "set": "Listings, visible prices with dates and marketplaces, the verifiable difference, and how that difference hits repeated 2-3 star complaints. This example is a fixture.",
     "status": "pass"
   },
   "positioning": {
@@ -85,5 +86,17 @@
     "status": "pending",
     "note": "RFQ drafted from templates/rfq.md using the competitor-price benchmark as the sample. Not sent, because the user has not agreed to outreach."
   },
-  "brand_launch": "Optional and not started in this example. Official trademark and name clearance happen after a product is picked and do not affect the selection verdict."
+  "brand_launch": "Optional and not started in this example. Official trademark and name clearance happen after a product is picked and do not affect the selection verdict.",
+  "channel_coverage": {
+    "amazon": "returned (example fixture — not a real fetch)",
+    "reddit": "returned (example fixture)",
+    "youtube": "returned (example fixture)",
+    "tiktok": "returned (example fixture)",
+    "note": "A real report must list which channels actually returned data and which failed. Missing must-have evidence means insufficient evidence — stop for now."
+  },
+  "review_source": {
+    "source": "public Customers say and featured reviews",
+    "coverage": "partial",
+    "note": "Example fixture. A real run should also try manual signed-in 2-3 star reviews on the top 3-5 competitors, or an optional seller tool / opt-in scraper if the user enabled one."
+  }
 }

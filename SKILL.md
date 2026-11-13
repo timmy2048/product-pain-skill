@@ -41,13 +41,14 @@ If a key input is missing, use a reasonable default from context and state it in
 ## Principles
 
 - The main path starts from pain: find problems current products handle poorly, then infer form and brand. Sizing a large market first is only a cross-check, not a required starting point.
-- Ecommerce evidence is required. Check the channels the target market actually buys from (Amazon is the default for US/UK/AU; add other retailers or official brand sites when relevant). Trend charts and videos alone are not enough to call a pain real.
-- YouTube and similar routine content show how people use a product and what they complain about. Absolute search volume and ad-auction competition confirm demand size. Google Trends is optional direction, not a required gate.
+- Social evidence is limited to exactly three channels: Reddit, TikTok, and YouTube. Do not use Pinterest, Instagram, Facebook organic, or other social networks by default. The main ecommerce channel is Amazon US, UK, and Australia (add `.ca` only when the user asks). Other retailers are optional supplements, not defaults. Trend charts and videos alone are not enough to call a pain real.
+- Reddit and YouTube show unprompted pain and how people use a product. TikTok is for content heat (hooks already running, short-form activity), not a substitute for those pain channels. Absolute search volume and ad-auction competition confirm demand size. Google Trends is optional direction, not a required gate.
 - Collect transcripts, volumes, prices, and reviews from pages or dedicated tools. The model only clusters, judges, and writes the conclusion. It does not invent evidence.
 - After the form and the logistics/education screen both pass, gates 5–7 may run in parallel. If one of them fails, is unverified, or (for gate 7) is incomplete, finish any of 5–7 already in progress, then stop before gate 8. Gate 8 stays after those. Gate 8b is a supplier-quote follow-up and is not required to conclude **worth a small-scale test**. Gate 9 is always last and must not run if gate 8 or any earlier gate failed or was unverified on a must-have fact. A pending 8b does not block gate 9 or that verdict.
-- Prefer public pages, official APIs, or a constructed search URL that a person or browser then opens. Do not use scrapers, credentials, or plugins that violate a site's terms of service. If a page is blocked or requires login, record the gap and treat the missing fact as unverified.
-- Official APIs for Reddit and the Meta Ad Library are optional accelerators when the user already has approved credentials. They are not required to finish a run, and you should not wait on API review before starting the gates. If credentials are missing, use public pages and record the gap. TikTok's Research API is limited to approved academic or non-profit researchers and is not a commercial selection tool. Amazon has no official API for 2–3-star review text; use the public "Customers say" summary and, when the user can sign in, the star-filtered reviews. Official trademark name search has no public API at USPTO, UK IPO, or IP Australia; use each official search page in a browser after a product is picked, if a name will actually be used. Do not call undocumented internal search endpoints. Trademark search is not part of the selection verdict.
+- Prefer public pages, official APIs, or a constructed search URL that a person or browser then opens. If a page is blocked or requires login, record the gap and treat the missing fact as unverified. Never sign in to or automate an Amazon account, and never pass Amazon cookies to a script. The default Amazon review path is public "Customers say" plus featured reviews, and manual signed-in browser viewing of 2–3 star reviews on the top 3–5 competitors. Helium 10, Jungle Scout, and Sellersprite are optional accelerators only when the user already has an account. An optional, off-by-default helper (`scripts/fetch_amazon_reviews.py`) may call a user-supplied ScrapingBee or Apify key for logged-out public review text. Automated scraping of Amazon violates Amazon's Conditions of Use and can lead to IP or account blocks; the user must pass `--accept-risk` with their own key and accepts that risk. Record the review source in the report and say when coverage is partial.
+- Official APIs for Reddit and the Meta Ad Library are optional accelerators when the user already has approved credentials. They are not required to finish a run, and you should not wait on API review before starting the gates. If credentials are missing, use public pages and record the gap. TikTok's Research API is limited to approved academic or non-profit researchers and is not a commercial selection tool. Amazon has no official API for 2–3-star review text. Official trademark name search has no public API at USPTO, UK IPO, or IP Australia; use each official search page in a browser after a product is picked, if a name will actually be used. Do not call undocumented internal search endpoints. Trademark search is not part of the selection verdict.
 - Default to free, publicly reachable tools. Paid rank, review, or keyword suites are optional upgrades, never required dependencies for a complete run.
+- Every report must list which required channels actually returned data and which failed (channel coverage), and which Amazon review source was used. Missing must-have evidence for an evaluated gate means **insufficient evidence — stop for now**, not a guessed pass.
 - Shipping weight, restricted goods, return or hygiene rules, and market-education cost can kill an otherwise valid pain-plus-demand idea. Screen them early, before deep brand work.
 - During selection, judge price feasibility with a competitor-price teardown: dated competitor shelf prices, then a back-calculated target landed cost and allowable ex-factory range. State every assumption percentage (marketplace fees, shipping, returns, ads, margin). Never present those percentages, or the resulting ceilings, as quotes or as verified factory costs.
 - Official trademark and name clearance happen after you pick the product. They are optional in the selection report and must not affect the verdict. Gate 7 may list brief, uncleared name ideas; it must not run a trademark search.
@@ -82,16 +83,42 @@ Verdict mapping:
 
 Do not require gate 8b to be complete, or gate 9 to have been entered, in order to conclude **worth a small-scale test**. Gate 8b stays **pending** until quotes are in hand. Gate 9 is the test plan that follows the test verdict. If you stop early, still output every report section; unreached sections must be exactly: **Not evaluated — stopped at gate N**. Older facts files may still number the desk check as **8a**; treat **8a** as the same gate as **8**.
 
+## Channel roles, minimum evidence, and fallbacks
+
+Required social channels (exactly these three): Reddit, TikTok, YouTube. Required ecommerce channel: Amazon US / UK / AU. Pinterest, Instagram, Facebook organic, and other social networks are not used by default. Meta Ad Library is a brand-vacuum and ad-signal tool, not a social evidence channel. Similarweb and Google Trends are optional leads only.
+
+| Channel | What it proves | Not what it proves |
+| --- | --- | --- |
+| Reddit | Unprompted pain, failed products, workarounds | Demand volume or willingness to pay |
+| YouTube | How people use a product and what they complain about in situ; unprompted brand names (feeds gate 5) | View counts as demand volume |
+| TikTok | Content heat: hooks already running, short-form activity around the pain | A substitute for Reddit or YouTube pain evidence; profit |
+| Amazon US/UK/AU | Paid demand (rank, review velocity, listing density), 2–3 star / bad-review text, and dated shelf prices | An official demand-volume number; a complete star-filtered review history from public pages alone |
+
+Minimum evidence and fallbacks:
+
+| Gate | Must-have evidence | Fallback | If the must-have is missing |
+| --- | --- | --- | --- |
+| 0 | At least one of: Amazon Movers & Shakers, TikTok Creative Center, Reddit pain-pattern posts; Google Trends optional | Use only the signals you can open | If none of the named signals open: **insufficient evidence — stop for now** |
+| 1 | Recurring pain on Reddit and/or YouTube, **and** Amazon review evidence for the same pain (2–3 star text preferred) | Public "Customers say" plus featured reviews, labelled **partial**, if the 2–3 star filter is behind a login and no signed-in session or optional tool is available. TikTok comments may support pain but do not replace Reddit or YouTube | If Amazon review evidence and both social pain channels fail: **unverified** → **insufficient evidence — stop for now** |
+| 2 | Amazon paid-demand proxies (rank, review velocity, listing density) showing people already look for a solution and demand is not clearly fading | Keyword volume or ad-auction figures when visible, labelled as estimates. Google Trends is optional direction only | If you have no Amazon demand proxies and no other magnitude: **unverified** → **insufficient evidence — stop for now** |
+| 3 | A form that maps to the pain and a difference checkable on Amazon competitor pages | — | Fail if it is only a reskin |
+| 5 | Shelf and routine-content vacuum judgment, **plus** a standalone-site check for each of the top 3–5 Amazon sellers (own site or none found; Shopify or not, if a site exists; Meta Ad Library ads; on-site reviews on that brand site) | Similarweb is optional and never proof of vacuum | If the required site/ads/on-site-review check cannot be completed: **unverified** → **insufficient evidence — stop for now** |
+| 6 | A verifiable difference that addresses **repeated** complaints in the top 3–5 competitors' 2–3 star (or otherwise bad) reviews, plus dated shelf prices | Public "Customers say" plus featured reviews, labelled **partial**, if star-filtered text cannot be opened | If you cannot read those complaints at all: **unverified** → **insufficient evidence — stop for now**. Fail if the difference is only a slogan, already on a competitor page, or does not hit those repeated complaints |
+| 8 | Regulatory path, patent quick look, competitor-price benchmark from dated Amazon (or other opened) shelf prices | — | Unverified if those cannot be completed |
+
+In the report, fill **Channel coverage** (which of Reddit, TikTok, YouTube, and Amazon actually returned data, and which failed) and **Review source** (`public Customers say / featured reviews`, `manual signed-in browser`, `seller tool` such as Helium 10 / Jungle Scout / Sellersprite, or `scraper`, plus whether coverage is partial). A failed must-have channel is not a silent skip.
+
 ## Tooling (free first)
 
 Use these defaults in v1. Paid alternatives may be added in the report as optional follow-up, not as blockers.
 
 | Need | Default (free) | How to use |
 | --- | --- | --- |
-| Pain in the wild | Reddit, Amazon, TikTok, YouTube public search | Follow `references/` playbooks. Build URLs with `scripts/build_search_urls.py`. |
-| Demand / search | Google Search plus a free volume overlay when available (for example Keyword Surfer); Google Trends for direction | Label third-party or extension figures as estimates. Never invent official Keyword Planner volumes. |
-| Reviews and competitors | Amazon public product pages, especially "Customers say" and 2–3 star reviews when a signed-in browser can open them | See `references/amazon.md`. Brand sites are a supplement, not a substitute. Capture dated shelf prices here; they feed the gate 8 cost benchmark. |
-| Ad spend signals | Meta Ad Library (public page, or the official API when the user has a token) | Longevity and ad count are spend/expansion clues, not proof of profit. |
+| Pain in the wild | Reddit and YouTube public search; Amazon 2–3 star / bad reviews | Follow `references/` playbooks. Build URLs with `scripts/build_search_urls.py`. TikTok is for content heat, not the primary pain source. |
+| Content heat | TikTok public search and, for gate 0, Creative Center if it opens | Hooks and short-form activity. Not a substitute for Reddit or YouTube pain. |
+| Demand / search | Amazon US/UK/AU rank, review velocity, and listing density; Google Search plus a free volume overlay when available; Google Trends for direction | Label third-party or extension figures as estimates. Never invent official Keyword Planner volumes. |
+| Reviews and competitors | Default: public "Customers say" plus featured reviews, and manual signed-in browser viewing of 2–3 star reviews on the top 3–5 competitors | See `references/amazon.md`. Record the review source and say when coverage is partial. Optional accelerators: Helium 10, Jungle Scout, or Sellersprite when the user already has an account; or `scripts/fetch_amazon_reviews.py` if the user has opted in at their own risk. Capture dated shelf prices for the gate 8 cost benchmark. |
+| Brand-site and ad check (gate 5) | Each top Amazon seller's standalone site (Shopify or not), Meta Ad Library, and on-site reviews | Required for gate 5. Meta Ad Library is an ad signal, not a social evidence channel. Similarweb remains optional and is not vacuum proof. |
 | Site traffic | Similarweb free snapshot | If the free view is empty or paywalled, mark traffic as unknown. Treat figures as estimates and as leads, not as gate 1–2 evidence. |
 | Patents (gate 8) | Google Patents | Quick look for utility or design patents that would block the proposed form or its core feature. |
 | Trademarks (after you pick the product) | Official trademark search in a browser (USPTO, UK IPO, IP Australia; add CIPO, IPONZ, or EUIPO when those markets are in the run) | Optional brand-launch checklist only. Not a selection gate, and not part of the verdict. `scripts/build_search_urls.py --names` prints the official start pages. |
@@ -115,11 +142,15 @@ This gate is **complete** when a pick and a reason are written down. If you cann
 
 ### 1. Define the category and mine the pain
 
-Sources: Amazon and other ecommerce reviews, return reasons, and Q&A; Reddit threads; TikTok and YouTube comments and captions.
+Sources: Amazon 2–3 star (or otherwise bad) review text, return reasons, and Q&A; Reddit threads; YouTube comments, titles, and transcripts. TikTok may support the same theme as content heat, but it does not replace Reddit or YouTube.
 
-Pass: the same pain is mentioned repeatedly, and current products clearly leave it unsolved.
+For Amazon reviews, use this default path and record which source you used: public "Customers say" plus featured reviews on the product page, **and** manual signed-in browser viewing of 2–3 star reviews on the top 3–5 competitors. If the star filter stays behind a login, keep the public snapshot, label coverage **partial**, and do not invent filtered review text. Optional accelerators, only when the user already has access or has opted in: Helium 10, Jungle Scout, Sellersprite, or `scripts/fetch_amazon_reviews.py`. Prefer 2–3 star text for unmet jobs; treat 1-star shipping-and-packaging rants as secondary.
+
+Pass: the same pain is mentioned repeatedly on Reddit and/or YouTube, Amazon review evidence supports that it is still unsolved, and current products clearly leave it unsolved.
 
 Fail: only scattered complaints, or a hot category with no concrete problem.
+
+If you cannot get Amazon review evidence (even the public "Customers say" fallback) and cannot get recurring pain from Reddit or YouTube, mark this gate **unverified**.
 
 ### 2. Confirm demand exists and is not clearly fading
 
@@ -151,19 +182,30 @@ If shipping, returns, or education cost cannot be verified, do not invent it. Ma
 
 ### 5. Brand vacuum
 
-Look at routine content, review roundups, and ecommerce shelves for a brand people name unprompted, and whether that brand already solves this pain.
+Look at routine content (especially YouTube), review roundups, and Amazon shelves for a brand people name unprompted, and whether that brand already solves this pain.
 
-Pass: no single dominant brand, or a dominant brand exists but its form or experience still misses this pain (partially clean).
+For each of the top 3–5 Amazon sellers, also complete this required standalone-site check:
+
+- Does the seller have its own brand site, or only an Amazon listing? Record the URL or write "none found."
+- If a site exists, is it Shopify or another stack, if you can tell? If you cannot tell, say so.
+- Does the brand appear in Meta Ad Library (active ads, rough count, and how long a creative or advertiser has been running, when visible)?
+- Does that brand site have on-site reviews (not only Amazon reviews)?
+
+Pass: the checklist above is completed for those top sellers, and either no single dominant brand exists, or a dominant brand exists but its form or experience still misses this pain (partially clean).
 
 Fail: a dominant brand has locked the category and already solved the pain. The presence of competitors alone is not a reason to reject.
 
+If the required standalone-site, ads, or on-site-review check cannot be completed, mark this gate **unverified**. Similarweb snapshots are optional leads, not a substitute for the checklist.
+
 ### 6. Contrast competitors and name the difference
 
-Keep using ecommerce reviews, returns, Q&A, and reputable roundups. Record dated competitor shelf prices and marketplaces; gate 8 will use them for the cost benchmark.
+Keep using Amazon reviews, returns, Q&A, and reputable roundups. The named difference must hit **repeated** complaints in the top 3–5 competitors' 2–3 star (or otherwise bad) reviews — not a slogan that ignores those complaints. Use the same default review path as gate 1, and record the review source and whether coverage is partial. Record dated competitor shelf prices and marketplaces; gate 8 will use them for the cost benchmark.
 
-Pass: there is a verifiable difference in form, experience, aesthetic, price band, or use occasion — not a slogan. The difference must be checkable on competitor pages (construction, sizing system, materials, or occasion), not only claimed in copy.
+Pass: there is a verifiable difference in form, experience, aesthetic, price band, or use occasion — not a slogan — and that difference addresses repeated complaints in those competitors' bad reviews. The difference must be checkable on competitor pages (construction, sizing system, materials, or occasion), not only claimed in copy.
 
-Fail: the only difference is a claim or a slogan, or every claimed difference is already on a competitor page.
+Fail: the only difference is a claim or a slogan, every claimed difference is already on a competitor page, or the proposed difference does not address those repeated bad-review complaints.
+
+If you cannot read those competitors' bad-review complaints at all (no signed-in 2–3 star text, no seller-tool export, no opted-in scraper, and no public "Customers say" or featured-review snapshot), mark this gate **unverified**.
 
 ### 7. Positioning and claim boundaries
 
@@ -247,8 +289,10 @@ Always write a conclusion report from the language-matched template (`templates/
 - Demand evidence
 - Recommended or evaluated form
 - Logistics and education-cost screen, including apparel return or hygiene risk when relevant
-- Vacuum judgment
-- Competitors and difference, including dated shelf prices used later in gate 8
+- Vacuum judgment, including the required standalone-site, Shopify, Meta Ad Library, and on-site-review check for the top Amazon sellers
+- Competitors and difference, including how the difference hits repeated 2–3 star complaints, and dated shelf prices used later in gate 8
+- Channel coverage: which of Reddit, TikTok, YouTube, and Amazon returned data, and which failed
+- Review source: `public Customers say / featured reviews`, `manual signed-in browser`, `seller tool`, or `scraper`, and whether coverage is partial
 - Positioning, claim boundaries, and the cross-category aesthetic reference; brand-name candidates only if offered, labelled uncleared
 - Gate 8 desk check: regulatory path, a patent quick look on the core feature, and a competitor-price cost benchmark with stated assumption percentages and source links
 - Gate 8b supplier quotes: a filled RFQ built around the competitor benchmark, sent only with the user's OK, and the status **pending 8b** until quotes arrive

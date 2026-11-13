@@ -1,6 +1,6 @@
 # Reddit playbook
 
-Use Reddit to hear unprompted complaints and workarounds, not to count demand.
+Reddit is one of the three required social channels. Use it to hear unprompted complaints and workarounds (gate 1 pain), not to count demand. Pinterest, Instagram, and other social networks are not used by default.
 
 ## Where to search
 

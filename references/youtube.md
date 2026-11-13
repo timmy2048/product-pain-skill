@@ -1,6 +1,6 @@
 # YouTube playbook
 
-Use YouTube to see how people actually use a product, what they complain about in situ, and whether a dominant brand is already named in everyday speech.
+YouTube is one of the three required social channels. Use it for pain and in-situ complaints (gate 1), and for whether a dominant brand is already named in everyday speech (feeds gate 5). It is not a demand-volume source.
 
 ## Where to search
 
