@@ -543,15 +543,17 @@ def default_channel_coverage(data: dict, language: str) -> str:
         return as_block(value)
     if language == "zh":
         return (
-            "此份事实文件未记录渠道覆盖。正式报告须写明 Reddit、TikTok、YouTube "
-            "和 Amazon 美/英/澳哪些实际拿到了数据、哪些失败。"
+            "此份事实文件未记录渠道覆盖。正式报告须写明 Reddit、TikTok、YouTube、"
+            "Amazon 美/英/澳、Meta Ad Library 和 Google Ads Transparency Center "
+            "哪些实际拿到了数据、哪些失败。"
             "缺必须证据时应改为「证据不足先停」，不要把未核过的关卡写成通过。"
         )
     return (
         "Not recorded in this facts file. For a real run, list which of Reddit, "
-        "TikTok, YouTube, and Amazon US/UK/AU actually returned data and which "
-        "failed. Missing must-have evidence means insufficient evidence — stop "
-        "for now, not a guessed pass."
+        "TikTok, YouTube, Amazon US/UK/AU, Meta Ad Library, and Google Ads "
+        "Transparency Center actually returned data and which failed. Missing "
+        "must-have evidence means insufficient evidence — stop for now, not a "
+        "guessed pass."
     )
 
 

@@ -320,6 +320,19 @@ def render_markdown(
     if names:
         lines.extend(trademark_section(markets, names))
 
+    if keywords:
+        lines.extend(
+            [
+                "## Google Ads Transparency Center (gate 5)",
+                "",
+                "Official start pages only. Open them in a browser and type the advertiser name or website. This script does not invent query endpoints or fetch the pages.",
+                "",
+                "- Home: https://adstransparency.google.com/",
+                "- Search: https://adstransparency.google.com/search",
+                "",
+            ]
+        )
+
     if domains:
         lines.append("## Similarweb (free snapshot)")
         lines.append("")

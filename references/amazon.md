@@ -54,7 +54,7 @@ For each relevant listing, capture: title, URL, visible price (and the date and 
 
 If a price is only in an editorial article, or the buy box is missing, say so. Do not treat a press price as a live transaction price.
 
-For **gate 5**, do not stop at the Amazon listing. For each of the top 3–5 sellers, check whether the brand has a standalone site (Shopify or otherwise), whether it is running Meta Ad Library ads, and whether that site has on-site reviews.
+For **gate 5**, do not stop at the Amazon listing. For each of the top 3–5 sellers, check whether the brand has a standalone site (Shopify or otherwise), whether it is running Meta Ad Library and Google Ads Transparency Center ads, and whether that site has on-site reviews. See `references/google-ads.md`.
 
 ## Access
 

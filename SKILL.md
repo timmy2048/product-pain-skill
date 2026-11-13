@@ -85,7 +85,7 @@ Do not require gate 8b to be complete, or gate 9 to have been entered, in order 
 
 ## Channel roles, minimum evidence, and fallbacks
 
-Required social channels (exactly these three): Reddit, TikTok, YouTube. Required ecommerce channel: Amazon US / UK / AU. Pinterest, Instagram, Facebook organic, and other social networks are not used by default. Meta Ad Library is a brand-vacuum and ad-signal tool, not a social evidence channel. Similarweb and Google Trends are optional leads only.
+Required social channels (exactly these three): Reddit, TikTok, YouTube. Required ecommerce channel: Amazon US / UK / AU. Pinterest, Instagram, Facebook organic, and other social networks are not used by default. Meta Ad Library and Google Ads Transparency Center are brand-vacuum and ad-signal tools, not social evidence channels. They do not prove pain or paid demand and cannot replace Reddit, YouTube, or Amazon reviews. Similarweb and Google Trends are optional leads only.
 
 | Channel | What it proves | Not what it proves |
 | --- | --- | --- |
@@ -93,6 +93,8 @@ Required social channels (exactly these three): Reddit, TikTok, YouTube. Require
 | YouTube | How people use a product and what they complain about in situ; unprompted brand names (feeds gate 5) | View counts as demand volume |
 | TikTok | Content heat: hooks already running, short-form activity around the pain | A substitute for Reddit or YouTube pain evidence; profit |
 | Amazon US/UK/AU | Paid demand (rank, review velocity, listing density), 2–3 star / bad-review text, and dated shelf prices | An official demand-volume number; a complete star-filtered review history from public pages alone |
+| Meta Ad Library | Whether a competitor is running Meta ads, and visible creative longevity (gate 5) | Pain, paid demand, or profit |
+| Google Ads Transparency Center | Whether a competitor advertises on Google surfaces, visible ad copy, and whether a landing looks like a brand site or Amazon (gate 5) | Pain, paid demand, bid keywords, or spend. Complements Meta Ad Library; does not replace it, Reddit, YouTube, or Amazon reviews |
 
 Minimum evidence and fallbacks:
 
@@ -102,11 +104,11 @@ Minimum evidence and fallbacks:
 | 1 | Recurring pain on Reddit and/or YouTube, **and** Amazon review evidence for the same pain (2–3 star text preferred) | Public "Customers say" plus featured reviews, labelled **partial**, if the 2–3 star filter is behind a login and no signed-in session or optional tool is available. TikTok comments may support pain but do not replace Reddit or YouTube | If Amazon review evidence and both social pain channels fail: **unverified** → **insufficient evidence — stop for now** |
 | 2 | Amazon paid-demand proxies (rank, review velocity, listing density) showing people already look for a solution and demand is not clearly fading | Keyword volume or ad-auction figures when visible, labelled as estimates. Google Trends is optional direction only | If you have no Amazon demand proxies and no other magnitude: **unverified** → **insufficient evidence — stop for now** |
 | 3 | A form that maps to the pain and a difference checkable on Amazon competitor pages | — | Fail if it is only a reskin |
-| 5 | Shelf and routine-content vacuum judgment, **plus** a standalone-site check for each of the top 3–5 Amazon sellers (own site or none found; Shopify or not, if a site exists; Meta Ad Library ads; on-site reviews on that brand site) | Similarweb is optional and never proof of vacuum | If the required site/ads/on-site-review check cannot be completed: **unverified** → **insufficient evidence — stop for now** |
+| 5 | Shelf and routine-content vacuum judgment, **plus** a standalone-site check for each of the top 3–5 Amazon sellers (own site or none found; Shopify or not, if a site exists; Meta Ad Library ads; Google Ads Transparency Center ads; on-site reviews on that brand site) | Similarweb is optional and never proof of vacuum. A timeout or empty Ads Transparency page is unverified, not a “no ads” finding | If the required site/ads/on-site-review check cannot be completed: **unverified** → **insufficient evidence — stop for now** |
 | 6 | A verifiable difference that addresses **repeated** complaints in the top 3–5 competitors' 2–3 star (or otherwise bad) reviews, plus dated shelf prices | Public "Customers say" plus featured reviews, labelled **partial**, if star-filtered text cannot be opened | If you cannot read those complaints at all: **unverified** → **insufficient evidence — stop for now**. Fail if the difference is only a slogan, already on a competitor page, or does not hit those repeated complaints |
 | 8 | Regulatory path, patent quick look, competitor-price benchmark from dated Amazon (or other opened) shelf prices | — | Unverified if those cannot be completed |
 
-In the report, fill **Channel coverage** (which of Reddit, TikTok, YouTube, and Amazon actually returned data, and which failed) and **Review source** (`public Customers say / featured reviews`, `manual signed-in browser`, `seller tool` such as Helium 10 / Jungle Scout / Sellersprite, or `scraper`, plus whether coverage is partial). A failed must-have channel is not a silent skip.
+In the report, fill **Channel coverage** (which of Reddit, TikTok, YouTube, Amazon, Meta Ad Library, and Google Ads Transparency Center actually returned data, and which failed) and **Review source** (`public Customers say / featured reviews`, `manual signed-in browser`, `seller tool` such as Helium 10 / Jungle Scout / Sellersprite, or `scraper`, plus whether coverage is partial). A failed must-have channel is not a silent skip.
 
 ## Tooling (free first)
 
@@ -118,12 +120,12 @@ Use these defaults in v1. Paid alternatives may be added in the report as option
 | Content heat | TikTok public search and, for gate 0, Creative Center if it opens | Hooks and short-form activity. Not a substitute for Reddit or YouTube pain. |
 | Demand / search | Amazon US/UK/AU rank, review velocity, and listing density; Google Search plus a free volume overlay when available; Google Trends for direction | Label third-party or extension figures as estimates. Never invent official Keyword Planner volumes. |
 | Reviews and competitors | Default: public "Customers say" plus featured reviews, and manual signed-in browser viewing of 2–3 star reviews on the top 3–5 competitors | See `references/amazon.md`. Record the review source and say when coverage is partial. Optional accelerators: Helium 10, Jungle Scout, or Sellersprite when the user already has an account; or `scripts/fetch_amazon_reviews.py` if the user has opted in at their own risk. Capture dated shelf prices for the gate 8 cost benchmark. |
-| Brand-site and ad check (gate 5) | Each top Amazon seller's standalone site (Shopify or not), Meta Ad Library, and on-site reviews | Required for gate 5. Meta Ad Library is an ad signal, not a social evidence channel. Similarweb remains optional and is not vacuum proof. |
+| Brand-site and ad check (gate 5) | Each top Amazon seller's standalone site (Shopify or not), Meta Ad Library, Google Ads Transparency Center, and on-site reviews | Required for gate 5. See `references/google-ads.md` and the Meta notes in `references/tools.md`. These ad libraries are ad signals, not social evidence, and do not prove pain or paid demand. Similarweb remains optional and is not vacuum proof. |
 | Site traffic | Similarweb free snapshot | If the free view is empty or paywalled, mark traffic as unknown. Treat figures as estimates and as leads, not as gate 1–2 evidence. |
 | Patents (gate 8) | Google Patents | Quick look for utility or design patents that would block the proposed form or its core feature. |
 | Trademarks (after you pick the product) | Official trademark search in a browser (USPTO, UK IPO, IP Australia; add CIPO, IPONZ, or EUIPO when those markets are in the run) | Optional brand-launch checklist only. Not a selection gate, and not part of the verdict. `scripts/build_search_urls.py --names` prints the official start pages. |
 
-Channel playbooks: `references/reddit.md`, `references/amazon.md`, `references/tiktok.md`, `references/youtube.md`. Tool notes: `references/tools.md`.
+Channel playbooks: `references/reddit.md`, `references/amazon.md`, `references/tiktok.md`, `references/youtube.md`, `references/google-ads.md`. Tool notes: `references/tools.md`.
 
 ## Gates
 
@@ -189,6 +191,7 @@ For each of the top 3–5 Amazon sellers, also complete this required standalone
 - Does the seller have its own brand site, or only an Amazon listing? Record the URL or write "none found."
 - If a site exists, is it Shopify or another stack, if you can tell? If you cannot tell, say so.
 - Does the brand appear in Meta Ad Library (active ads, rough count, and how long a creative or advertiser has been running, when visible)?
+- Does the brand appear in [Google Ads Transparency Center](https://adstransparency.google.com/) (ads present or not, copy themes, and whether a visible landing is a brand site or Amazon)? Search by advertiser name or website, as the official tool documents. See `references/google-ads.md`. A timeout or empty page is unverified; do not invent ads.
 - Does that brand site have on-site reviews (not only Amazon reviews)?
 
 Pass: the checklist above is completed for those top sellers, and either no single dominant brand exists, or a dominant brand exists but its form or experience still misses this pain (partially clean).
@@ -289,9 +292,9 @@ Always write a conclusion report from the language-matched template (`templates/
 - Demand evidence
 - Recommended or evaluated form
 - Logistics and education-cost screen, including apparel return or hygiene risk when relevant
-- Vacuum judgment, including the required standalone-site, Shopify, Meta Ad Library, and on-site-review check for the top Amazon sellers
+- Vacuum judgment, including the required standalone-site, Shopify, Meta Ad Library, Google Ads Transparency Center, and on-site-review check for the top Amazon sellers
 - Competitors and difference, including how the difference hits repeated 2–3 star complaints, and dated shelf prices used later in gate 8
-- Channel coverage: which of Reddit, TikTok, YouTube, and Amazon returned data, and which failed
+- Channel coverage: which of Reddit, TikTok, YouTube, Amazon, Meta Ad Library, and Google Ads Transparency Center returned data, and which failed
 - Review source: `public Customers say / featured reviews`, `manual signed-in browser`, `seller tool`, or `scraper`, and whether coverage is partial
 - Positioning, claim boundaries, and the cross-category aesthetic reference; brand-name candidates only if offered, labelled uncleared
 - Gate 8 desk check: regulatory path, a patent quick look on the core feature, and a competitor-price cost benchmark with stated assumption percentages and source links

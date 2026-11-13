@@ -39,7 +39,7 @@
   },
   "vacuum": {
     "judgment": "Whether a dominant brand already solves this pain.",
-    "standalone_sites": "For each of the top 3-5 Amazon sellers: own site or none found, Shopify or not, Meta Ad Library ads, and on-site reviews. This example did not actually check.",
+    "standalone_sites": "For each of the top 3-5 Amazon sellers: own site or none found, Shopify or not, Meta Ad Library ads, Google Ads Transparency Center ads, and on-site reviews. This example did not actually check.",
     "status": "pass"
   },
   "competitors": {
@@ -92,7 +92,9 @@
     "reddit": "returned (example fixture)",
     "youtube": "returned (example fixture)",
     "tiktok": "returned (example fixture)",
-    "note": "A real report must list which channels actually returned data and which failed. Missing must-have evidence means insufficient evidence — stop for now."
+    "note": "A real report must list which channels actually returned data and which failed, including Meta Ad Library and Google Ads Transparency Center. Missing must-have evidence means insufficient evidence — stop for now.",
+    "meta_ad_library": "returned (example fixture)",
+    "google_ads_transparency": "returned (example fixture)"
   },
   "review_source": {
     "source": "public Customers say and featured reviews",
