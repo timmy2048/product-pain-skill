@@ -105,6 +105,8 @@ Pass: there is a verifiable difference in form, experience, aesthetic, price ban
 
 Write the target user, aesthetic references, two or three brand-name candidates, and claims that must not be used (especially medical or efficacy claims). This gate does not clear a trademark; that belongs in gate 8. Treat name candidates as unregistered ideas only.
 
+For aesthetic references, do not copy the look of established competitors in the same category. Borrow from a brand the target audience already loves in a *different* category — for example a pet product taking cues from Aesop or Muji, or a sports accessory taking cues from Rhode or Glossier. Name the reference brand and why this audience already likes it. The goal is a look that stands apart on the same shelf, not a reskin of a category incumbent.
+
 ### 8. Compliance, IP, supply chain, and unit economics
 
 Check trademarks, patents, and target-market rules (especially efficacy and medical-device language). Confirm MOQ, ex-factory price, certifications, and lead time from a factory or a page you can actually open, then back into retail price and margin.
@@ -114,6 +116,8 @@ If a figure cannot be verified, label it uncertain and stop here. Do not invent 
 ### 9. Small-scale test
 
 Run creative and a landing page (or equivalent) as a small conversion test. Tooling and inventory come after the test works. Do not enter this gate if any earlier gate failed. Do not spend money on ads unless the user explicitly asks after the earlier gates have passed.
+
+When a testable offer is ready, cold-start with organic short-form videos that try pain hooks. Watch completion, not just views. Once a video clearly reaches high completion, and only if the user has asked to spend, put the first ad budget toward people who watched about 95% or more of that video, so the first seed customers are converted at the lowest measurable cost. Do not start with broad prospecting.
 
 ## Report
 
@@ -126,7 +130,7 @@ Always write a conclusion report from `templates/report.md`. You may use `script
 - Logistics and education-cost screen
 - Vacuum judgment
 - Competitors and difference
-- Positioning and brand-name candidates
+- Positioning, brand-name candidates, and the cross-category aesthetic reference
 - Claim boundaries
 - Compliance, IP, and cost status, with source links
 - Final conclusion: exactly one of the three allowed verdicts

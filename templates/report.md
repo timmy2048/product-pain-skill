@@ -55,7 +55,8 @@ One-paragraph rationale:
 ## 7. Positioning and names
 
 - Target user:
-- Aesthetic references:
+- Cross-category aesthetic reference (a brand this audience already loves in another category; not a same-category incumbent):
+- Why that reference fits this audience:
 - Brand-name candidates (not trademark-cleared):
 - Claim boundaries (what must not be said):
 
@@ -70,8 +71,10 @@ One-paragraph rationale:
 ## 9. Small-scale test
 
 - Entered? yes / no (must be no if any earlier gate failed)
-- If yes: test plan and result:
+- Organic short-form hook tests (which pain hooks, completion, not just views):
+- If a high-completion video emerged: which one, and was spend sent to ~95% completers first:
 - Paid ads run only if the user explicitly asked after earlier gates passed:
+- Result:
 
 ## Open gaps
 
