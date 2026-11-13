@@ -1,0 +1,19 @@
+{
+  "mode": "recommend",
+  "timezone": "Asia/Shanghai",
+  "markets": ["US", "UK", "AU"],
+  "inputs": "Example only. Replace with a real run.",
+  "verdict": "insufficient evidence — stop for now",
+  "rationale": "This is a sample file so you can try scripts/render_report.py. It is not a real product decision.",
+  "pain": "Describe the recurring pain and link to evidence.",
+  "demand": "Label any volume figures as estimates. Do not invent official planner data.",
+  "form": "What to make, and what not to make.",
+  "logistics": "Shipping weight, restrictions, and market-education cost.",
+  "vacuum": "Whether a dominant brand already solves this pain.",
+  "competitors": "Listings, visible prices with dates, and the verifiable difference.",
+  "positioning": "Target user, aesthetic references, name candidates, claim boundaries.",
+  "compliance": "Trademark and patent search status, regulatory path, verified costs only.",
+  "test": "Not entered, because earlier gates did not pass in this example.",
+  "gaps": "List blocked pages, login walls, and unpaid data.",
+  "sources": ["https://github.com/timmy2048/product-pain-skill"]
+}
