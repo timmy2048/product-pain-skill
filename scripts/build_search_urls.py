@@ -170,11 +170,28 @@ def patents_url(term: str, exact: bool = False) -> str:
     return f"https://patents.google.com/?q={encode_query(q)}"
 
 
-def similarweb_url(domain: str) -> str:
+def normalize_domain(domain: str) -> str:
     host = domain.strip().lower().removeprefix("https://").removeprefix("http://").split("/")[0]
     if host.startswith("www."):
         host = host[4:]
-    return f"https://www.similarweb.com/website/{host}/"
+    return host
+
+
+def similarweb_url(domain: str) -> str:
+    return f"https://www.similarweb.com/website/{normalize_domain(domain)}/"
+
+
+def google_ads_search_url(query: str, region: str = "US") -> str:
+    """Ads Transparency search URL.
+
+    Only the `region` and `query` parameters were observed live
+    (2026-11-14, Asia/Shanghai), and only `region=US` was confirmed.
+    Do not invent other query-string parameters.
+    """
+    return (
+        "https://adstransparency.google.com/search"
+        f"?region={region}&query={encode_query(query)}"
+    )
 
 
 def parse_markets(raw: str) -> list[str]:
@@ -320,18 +337,29 @@ def render_markdown(
     if names:
         lines.extend(trademark_section(markets, names))
 
-    if keywords:
+    if keywords or domains:
         lines.extend(
             [
                 "## Google Ads Transparency Center (gate 5)",
                 "",
-                "Official start pages only. Open them in a browser and type the advertiser name or website. This script does not invent query endpoints or fetch the pages.",
+                "Open these official pages in a browser. Search the domain first; if it returns 0 results, retry the brand name, then the legal company name (for example 'X LLC', 'X Inc', 'X Ltd'), then the Amazon seller or brand name from the listing. Try the target-market region, then Anywhere. Only record \"no ads found\" after all variants return 0, and list the exact queries and URLs you tried. Only the `region` and `query` parameters were observed live, and only `region=US` was confirmed; do not invent other query-string parameters. For other regions or Anywhere, set the filter in the UI and record the URL the browser shows. This script does not fetch the pages.",
                 "",
                 "- Home: https://adstransparency.google.com/",
                 "- Search: https://adstransparency.google.com/search",
                 "",
             ]
         )
+        if domains:
+            lines.append(
+                "Observed search URL form (`region=US` confirmed live):"
+            )
+            lines.append("")
+            for domain in domains:
+                host = normalize_domain(domain)
+                if not host:
+                    continue
+                lines.append(f"- {host} (US): {google_ads_search_url(host, 'US')}")
+            lines.append("")
 
     if domains:
         lines.append("## Similarweb (free snapshot)")
@@ -362,7 +390,7 @@ def main(argv: list[str] | None = None) -> int:
         "--domains",
         nargs="*",
         default=[],
-        help="Optional competitor or brand domains for Similarweb links.",
+        help="Optional competitor or brand domains for Similarweb and Google Ads Transparency search URLs.",
     )
     parser.add_argument(
         "--pain-patterns",
